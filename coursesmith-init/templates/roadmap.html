@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="book-slug" content="{{BOOK_SLUG}}">
+  <title>{{BOOK_TITLE}} - Study Guide</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<div class="layout no-sidebar">
+  <main>
+    <div class="roadmap">
+
+      <header class="roadmap-header">
+        <h1>{{BOOK_TITLE}}</h1>
+        <p>{{BOOK_SUBTITLE}}</p>
+        <div class="roadmap-progress">
+          <span class="progress-text">0 of {{CHAPTER_COUNT}} chapters</span>
+          <span class="bar"><span class="fill" style="width: 0%"></span></span>
+        </div>
+      </header>
+
+      <!-- 
+        Chapter nodes go here. For each chapter in manifest.json, render:
+        
+        <div class="roadmap-node">
+          <a class="roadmap-card {{STATUS_CLASS}}" 
+             href="chapters/{{CHAPTER_DIR}}/index.html"
+             data-chapter-slug="{{CHAPTER_SLUG}}"
+             data-status="{{STATUS}}">
+            <div class="chapter-num">CHAPTER {{N}}</div>
+            <div class="chapter-title">{{CHAPTER_TITLE}}</div>
+            <div class="chapter-meta">
+              <span class="status-badge {{STATUS}}">{{STATUS_LABEL}}</span>
+              <span>{{SUBSECTION_COUNT}} subsections</span>
+              <span>{{CARD_COUNT}} flashcards</span>
+              {{LAB_BADGE}}
+            </div>
+          </a>
+        </div>
+
+        Status values: "pending" | "ready" 
+        (pending = placeholder page generated; ready = full content available)
+        
+        ALL cards must be clickable <a> tags pointing at chapters/{{CHAPTER_DIR}}/index.html.
+        Pending chapters link to a placeholder page (chapter-placeholder.html template) that
+        explains the chapter has not been generated yet.
+      -->
+
+      {{ROADMAP_NODES}}
+
+    </div>
+  </main>
+</div>
+
+<script src="assets/script.js"></script>
+</body>
+</html>

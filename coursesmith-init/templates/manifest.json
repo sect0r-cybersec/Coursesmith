@@ -1,0 +1,42 @@
+{
+  "_comment": "This is the manifest template. Fields ending in _comment are documentation only; remove them in actual manifests.",
+
+  "book": {
+    "title": "Book title goes here",
+    "subtitle": "Optional one-line description",
+    "author": "Author name",
+    "publisher": "No Starch Press",
+    "edition": "3rd",
+    "year": 2025,
+    "slug": "book-title-3rd-ed"
+  },
+
+  "_paths_comment": "Recorded at init so later sessions know where the source PDF and the output folder live. Both are absolute paths on the user's machine. source_pdf is read on demand for page-range extraction; output_dir is where the study guide is written.",
+  "source_pdf": "/Users/sam/books/book-title.pdf",
+  "output_dir": "/Users/sam/books/study-guide-book-title-3rd-ed",
+
+  "generated_at_comment": "ISO 8601 timestamp when the manifest was first created",
+  "generated_at": "2026-05-07T00:00:00Z",
+  "last_modified": "2026-05-07T00:00:00Z",
+
+  "chapters": [
+    {
+      "_comment": "Status: 'pending' (not yet generated), 'ready' (full content available)",
+      "number": 1,
+      "title": "Chapter title from the book's table of contents",
+      "slug": "01-introduction",
+      "directory": "01-introduction",
+      "status": "pending",
+      "_page_range_comment": "1-based inclusive PDF page numbers for this chapter, read from the ToC at init. Used to extract just this chapter off disk (pdftotext -f page_start -l page_end). These are PDF page numbers, which may differ from the printed page numbers if the PDF has front matter.",
+      "page_start": 0,
+      "page_end": 0,
+      "subsection_count": 0,
+      "card_count": 0,
+      "lab_type": null,
+      "_lab_type_comment": "One of: 'jupyter', 'shell', 'windows', 'network', 'pentest', null (conceptual)",
+      "subsections": [],
+      "_subsections_comment": "Filled in when chapter is generated. Each entry: {id, title}",
+      "last_modified": null
+    }
+  ]
+}

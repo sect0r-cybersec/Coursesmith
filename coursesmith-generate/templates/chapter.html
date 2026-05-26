@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="book-slug" content="{{BOOK_SLUG}}">
+  <meta name="chapter-slug" content="{{CHAPTER_SLUG}}">
+  <title>{{CHAPTER_TITLE}} - {{BOOK_TITLE}}</title>
+  <link rel="stylesheet" href="../../assets/styles.css">
+  <!-- Prism.js for syntax highlighting (loaded from CDN) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-powershell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Sidebar with all chapters for navigation -->
+  <aside class="sidebar">
+    <h2>Roadmap</h2>
+    <a class="sidebar-link" href="../../index.html">
+      <span class="status-icon">←</span>
+      <span>Back to roadmap</span>
+    </a>
+
+    <h2>Chapters</h2>
+    <!-- 
+      For each chapter in manifest.json, render:
+      <a class="sidebar-link {{ACTIVE}}" 
+         href="../{{CHAPTER_DIR}}/index.html"
+         data-chapter-slug="{{CHAPTER_SLUG}}">
+        <span class="status-icon incomplete">○</span>
+        <span>{{N}}. {{CHAPTER_TITLE}}</span>
+      </a>
+    -->
+    {{SIDEBAR_LINKS}}
+
+    <h2>This chapter</h2>
+    <!-- 
+      For each subsection in this chapter, render:
+      <a class="sidebar-link" href="#{{SUBSECTION_ID}}">
+        <span class="status-icon incomplete">○</span>
+        <span>{{SUBSECTION_TITLE}}</span>
+      </a>
+    -->
+    {{SUBSECTION_LINKS}}
+  </aside>
+
+  <main>
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="../../index.html">Roadmap</a> &nbsp;/&nbsp; Chapter {{CHAPTER_NUM}}
+      </div>
+      <button class="btn" onclick="resetStudyProgress()">Reset progress</button>
+    </div>
+
+    <h1>{{CHAPTER_TITLE}}</h1>
+    {{CHAPTER_INTRO}}
+
+    <!-- Resource cards: Anki deck, Lab, Code examples -->
+    <div class="resources">
+      {{RESOURCE_CARDS}}
+      <!-- 
+        Each resource is rendered as:
+        <a class="resource-card" href="anki-deck.apkg" download>
+          <div class="resource-label">Flashcards</div>
+          <div class="resource-title">Anki Deck</div>
+          <div class="resource-desc">{{N}} cloze deletion cards</div>
+        </a>
+        
+        <a class="resource-card" href="lab.ipynb" download>
+          <div class="resource-label">Hands-on</div>
+          <div class="resource-title">Jupyter Lab</div>
+          <div class="resource-desc">Follow along in a notebook</div>
+        </a>
+        
+        OR
+        
+        <a class="resource-card" href="lab-guide.md">
+          <div class="resource-label">Hands-on</div>
+          <div class="resource-title">Lab Guide</div>
+          <div class="resource-desc">Set up and walkthrough</div>
+        </a>
+        
+        <a class="resource-card" href="code-examples/">
+          <div class="resource-label">Source</div>
+          <div class="resource-title">Code Examples</div>
+          <div class="resource-desc">{{N}} standalone files</div>
+        </a>
+      -->
+    </div>
+
+    <!-- 
+      Subsections go here. For each subsection, render:
+      
+      <section class="subsection" data-subsection-id="{{SUBSECTION_ID}}" id="{{SUBSECTION_ID}}">
+        <header class="subsection-header">
+          <h2 class="subsection-title">{{SUBSECTION_TITLE}}</h2>
+          <span class="subsection-status">{{SUBSECTION_NUM}} of {{TOTAL_SUBSECTIONS}}</span>
+        </header>
+        
+        {{SUBSECTION_BODY}}
+        
+        <!-- Quiz block -->
+        <details class="quiz-block">
+          <summary>Knowledge check ({{N}} questions)</summary>
+          
+          <!-- For each MCQ: -->
+          <div class="quiz-question" data-type="mcq" data-correct="b">
+            <div class="q-text">{{QUESTION_TEXT}}</div>
+            <div class="quiz-options">
+              <label class="quiz-option" data-value="a">
+                <input type="radio" name="q1">
+                <span>{{OPTION_A}}</span>
+              </label>
+              <label class="quiz-option" data-value="b">
+                <input type="radio" name="q1">
+                <span>{{OPTION_B}}</span>
+              </label>
+              <!-- ... more options -->
+            </div>
+            <div class="quiz-actions">
+              <button class="btn quiz-check-btn">Check answer</button>
+            </div>
+            <div class="quiz-explanation">
+              <strong>Answer:</strong> {{ANSWER_LETTER}}. {{EXPLANATION}}
+            </div>
+          </div>
+          
+          <!-- For each short-answer: -->
+          <div class="quiz-question" data-type="short">
+            <div class="q-text">{{QUESTION_TEXT}}</div>
+            <input class="quiz-short-answer" type="text" placeholder="Type your answer">
+            <div class="quiz-actions">
+              <button class="btn quiz-show-btn">Show model answer</button>
+            </div>
+            <div class="quiz-explanation">
+              <strong>Model answer:</strong> {{MODEL_ANSWER}}
+            </div>
+          </div>
+        </details>
+        
+        <button class="btn primary complete-btn">Mark subsection complete</button>
+      </section>
+    -->
+    
+    {{SUBSECTIONS}}
+
+    <!-- Chapter footer navigation -->
+    <nav class="chapter-nav">
+      {{PREV_CHAPTER_LINK}}
+      <!-- 
+        <a href="../{{PREV_DIR}}/index.html" class="prev">
+          <div class="nav-label">← Previous</div>
+          <div class="nav-title">{{PREV_TITLE}}</div>
+        </a>
+      -->
+      
+      {{NEXT_CHAPTER_LINK}}
+      <!-- 
+        <a href="../{{NEXT_DIR}}/index.html" class="next">
+          <div class="nav-label">Next →</div>
+          <div class="nav-title">{{NEXT_TITLE}}</div>
+        </a>
+      -->
+    </nav>
+
+  </main>
+</div>
+
+<script src="../../assets/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="book-slug" content="{{BOOK_SLUG}}">
+  <meta name="chapter-slug" content="{{CHAPTER_SLUG}}">
+  <title>{{CHAPTER_TITLE}} - {{BOOK_TITLE}}</title>
+  <link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body>
+
+<div class="layout no-sidebar">
+  <main>
+
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="../../index.html">Roadmap</a> &nbsp;/&nbsp; Chapter {{CHAPTER_NUM}}
+      </div>
+    </div>
+
+    <h1>{{CHAPTER_TITLE}}</h1>
+
+    <div class="placeholder-card">
+      <div class="placeholder-icon">⏳</div>
+      <h2 class="placeholder-title">This chapter is still being generated</h2>
+      <p class="placeholder-desc">
+        The skill is working through the book sequentially. This chapter hasn't been processed yet, but it will be in this same run. If you're seeing this in a final zip, something may have interrupted generation; start a new chat in the same project and say "continue from chapter {{CHAPTER_NUM}}" to resume.
+      </p>
+
+      <div class="placeholder-howto">
+        <h3>Resume generation</h3>
+        <p>If the previous run was cut short, open a new chat in the same project and say:</p>
+        <pre><code>continue from chapter {{CHAPTER_NUM}}</code></pre>
+        <p>The skill will pick up where it left off and produce a fresh zip with this chapter (and any later ones) populated.</p>
+      </div>
+
+      <div class="placeholder-meta">
+        <span class="status-badge pending">Pending</span>
+        {{LAB_BADGE}}
+      </div>
+    </div>
+
+    <nav class="chapter-nav">
+      {{PREV_CHAPTER_LINK}}
+      {{NEXT_CHAPTER_LINK}}
+    </nav>
+
+  </main>
+</div>
+
+<script src="../../assets/script.js"></script>
+</body>
+</html>
