@@ -7,7 +7,12 @@
       "Bash(cp /c/Users/harri/.claude/skills/book-to-study-guide/templates/chapter-placeholder.html '/c/Users/harri/Documents/Programming/Interactive learn skills/coursesmith-init/templates/chapter-placeholder.html')",
       "Bash(cp /c/Users/harri/.claude/skills/book-to-study-guide/templates/manifest.json '/c/Users/harri/Documents/Programming/Interactive learn skills/coursesmith-init/templates/manifest.json')",
       "Bash(cp /c/Users/harri/.claude/skills/book-to-study-guide/templates/styles.css '/c/Users/harri/Documents/Programming/Interactive learn skills/coursesmith-init/templates/styles.css')",
-      "Bash(cp /c/Users/harri/.claude/skills/book-to-study-guide/templates/script.js '/c/Users/harri/Documents/Programming/Interactive learn skills/coursesmith-init/templates/script.js')"
+      "Bash(cp /c/Users/harri/.claude/skills/book-to-study-guide/templates/script.js '/c/Users/harri/Documents/Programming/Interactive learn skills/coursesmith-init/templates/script.js')",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git remote *)",
+      "Bash(git checkout *)",
+      "Bash(git push *)"
     ]
   }
 }
