@@ -1,0 +1,27 @@
+<!--
+  Certificate card injected at the top of the roadmap (index.html) when
+  manifest.certificate is present.
+
+  This file is the canonical markup. `coursesmith-cert/scripts/render_certificate.py`
+  builds the same HTML at runtime (see `_render_cert_card_html`). If you
+  change the markup here, update the python builder to match.
+
+  Placeholders ({name}, {id}, {book_title}, {date_human}) are documentary;
+  the python script HTML-escapes the values and substitutes them in.
+
+  The HTML comment markers below let the python script find and replace
+  the block on re-runs without disturbing the rest of the roadmap.
+-->
+<!-- coursesmith-cert:card-start -->
+<div class="roadmap-node certificate-node">
+  <a class="roadmap-card certificate-card ready" href="certificate.png" target="_blank">
+    <div class="chapter-num">CERTIFICATE</div>
+    <div class="chapter-title">{name} &middot; {book_title}</div>
+    <div class="chapter-meta">
+      <span class="status-badge ready"><span class="status-icon complete">&#10003;</span> Completed</span>
+      <span>{id}</span>
+      <span>Issued {date_human}</span>
+    </div>
+  </a>
+</div>
+<!-- coursesmith-cert:card-end -->

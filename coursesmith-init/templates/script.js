@@ -12,6 +12,50 @@
   // -----------------------------------------------------------------
   const bookSlug = document.querySelector('meta[name="book-slug"]')?.content || 'default';
   const STORAGE_KEY = `study-guide:${bookSlug}:progress`;
+  const THEME_STORAGE_KEY = 'coursesmith-theme';
+
+  // -----------------------------------------------------------------
+  // Theme toggle (light / dark)
+  // Anti-flash <head> snippet sets data-theme before paint; this
+  // module wires the toggle button and persists user overrides.
+  // -----------------------------------------------------------------
+  const SUN_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>';
+  const MOON_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+
+  function currentTheme() {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved === 'light' || saved === 'dark') return saved;
+    return matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch (e) {
+      console.warn('Failed to save theme preference:', e);
+    }
+    document.querySelectorAll('.theme-toggle').forEach(refreshToggle);
+  }
+
+  function refreshToggle(btn) {
+    const t = currentTheme();
+    // Show the target icon: sun = "switch to light", moon = "switch to dark"
+    btn.innerHTML = t === 'light' ? MOON_ICON : SUN_ICON;
+    btn.setAttribute(
+      'aria-label',
+      t === 'light' ? 'Switch to dark theme' : 'Switch to light theme'
+    );
+  }
+
+  function initThemeToggle() {
+    document.querySelectorAll('.theme-toggle').forEach(btn => {
+      refreshToggle(btn);
+      btn.addEventListener('click', () => {
+        applyTheme(currentTheme() === 'light' ? 'dark' : 'light');
+      });
+    });
+  }
 
   function loadProgress() {
     try {
@@ -238,6 +282,7 @@
   // Init
   // -----------------------------------------------------------------
   document.addEventListener('DOMContentLoaded', () => {
+    initThemeToggle();
     initQuizzes();
     initSubsectionComplete();
     initCopyButtons();
