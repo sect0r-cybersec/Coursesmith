@@ -83,6 +83,12 @@ If `pdftotext` is missing, install poppler-utils, or fall back to `pypdf` / `pdf
 
     On the very first chapter, also tell them: "Progress (subsection ticks, quiz answers) is saved in your browser's localStorage, so you can close the tab and come back."
 
+    **If the chapter just generated is the last `pending` chapter** (every chapter now `status: "ready"`), replace the "next chapter" line with:
+
+    > Chapter {N} is done - that's the last one. Every chapter is now ready. Run `coursesmith-cert` whenever you want your certificate of completion.
+
+    In loop mode (see below), the same hint fires once at the end of the loop instead of after each chapter.
+
 ## Refine mode
 
 The user wants to change one component of an already-generated chapter. Regenerate only that component; leave the rest alone.

@@ -20,6 +20,15 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+  <script>
+    /* Anti-flash: set data-theme before paint if the user has a saved preference */
+    (function () {
+      var saved = localStorage.getItem('coursesmith-theme');
+      if (saved === 'light' || saved === 'dark') {
+        document.documentElement.setAttribute('data-theme', saved);
+      }
+    })();
+  </script>
 </head>
 <body>
 
@@ -63,6 +72,7 @@
         <a href="../../index.html">Roadmap</a> &nbsp;/&nbsp; Chapter {{CHAPTER_NUM}}
       </div>
       <button class="btn" onclick="resetStudyProgress()">Reset progress</button>
+      <button class="theme-toggle" type="button" aria-label="Switch theme"></button>
     </div>
 
     <h1>{{CHAPTER_TITLE}}</h1>

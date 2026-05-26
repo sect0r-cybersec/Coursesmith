@@ -6,6 +6,15 @@
   <meta name="book-slug" content="{{BOOK_SLUG}}">
   <title>{{BOOK_TITLE}} - Study Guide</title>
   <link rel="stylesheet" href="assets/styles.css">
+  <script>
+    /* Anti-flash: set data-theme before paint if the user has a saved preference */
+    (function () {
+      var saved = localStorage.getItem('coursesmith-theme');
+      if (saved === 'light' || saved === 'dark') {
+        document.documentElement.setAttribute('data-theme', saved);
+      }
+    })();
+  </script>
 </head>
 <body>
 
@@ -14,6 +23,7 @@
     <div class="roadmap">
 
       <header class="roadmap-header">
+        <button class="theme-toggle" type="button" aria-label="Switch theme"></button>
         <h1>{{BOOK_TITLE}}</h1>
         <p>{{BOOK_SUBTITLE}}</p>
         <div class="roadmap-progress">
