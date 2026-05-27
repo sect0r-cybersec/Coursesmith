@@ -34,11 +34,27 @@ These are non-negotiable for every chunk of generated content:
 - **Technical fidelity is non-negotiable.** Paraphrase prose. Do not paraphrase: command syntax, code, exact error messages, file paths, registry keys, API names, version numbers, configuration values, or anything where the wording *is* the technical content. If condensing risks losing a detail, keep the detail.
 - **No fabrication.** Do not invent or extrapolate beyond the source. If the source is ambiguous, preserve the ambiguity. Do not add information that isn't there, even if it would be technically correct.
 - **Teach the subject, don't narrate the chapter.** The grammatical subject of your sentences should be the thing being taught (Bash, TCP, the handshake), not the document ("this chapter", "the book", "we will cover"). No previews of structure, no "everything later builds on this" scaffolding, no lists of upcoming section headings dressed up as prose. The reader is here to learn the topic, not to be told what the chapter contains. See the intro worked example in `references/paraphrasing-rules.md`.
-- **British English, no AI tells.** Full no-go list in `references/paraphrasing-rules.md`. Plain technical writing, match the source's voice.
+- **British English, no AI tells.** No em dashes. No emojis unless the source uses them. No "delve", "leverage" (verb), "robust", "comprehensive", "navigate the complexities", "in today's fast-paced world", "it's important to note". Plain technical writing, matching the source's voice where possible.
 
 ## Reading the chapter off disk
 
-Read only this chapter's range, never the whole book. PDFs: `pdftotext -f {page_start} -l {page_end} "{source_pdf}" -` (add `-layout` for code/figure-heavy chapters). For embedded images: `pdfimages -f {page_start} -l {page_end} -png "{source_pdf}" {chapter_dir}/images/img`. For `.docx` / `.epub` (manifest shows `page_start: 0`), split by heading. Fallback if `pdftotext` is missing: `pypdf` or `pdfplumber`.
+Read only what this chapter needs. Never load the whole book.
+
+For PDFs, extract the chapter's pages using its stored range:
+
+```bash
+pdftotext -f {page_start} -l {page_end} "{source_pdf}" -
+```
+
+For code- or figure-heavy chapters where layout matters, add `-layout` to preserve columns and indentation. For embedded images the user needs:
+
+```bash
+pdfimages -f {page_start} -l {page_end} -png "{source_pdf}" {output_dir}/chapters/NN-slug/images/img
+```
+
+For `.docx` / `.epub` sources (manifest shows `page_start: 0`), split by chapter heading and read just that chapter's range.
+
+If `pdftotext` is missing, install poppler-utils, or fall back to `pypdf` / `pdfplumber`.
 
 ## Per-chapter flow (next-chapter and named-chapter modes)
 
@@ -46,8 +62,8 @@ Read only this chapter's range, never the whole book. PDFs: `pdftotext -f {page_
 2. Pick the target chapter (lowest pending, or the named one).
 3. Extract the chapter's pages off disk using the stored `page_start`/`page_end`.
 4. Identify the chapter's subsections from the extracted text. Aim for 3-7 subsections per chapter; group finer sub-subsections sensibly.
-5. For each subsection: paraphrase the prose (rules in `references/paraphrasing-rules.md`), preserve technical content verbatim, write a 3-5 question quiz at the end.
-6. Extract code examples. Inline them as syntax-highlighted blocks in the notes (Prism.js classes: `language-python`, `language-bash`, etc.) and also write each as a standalone file in `{chapter_dir}/code-examples/NN-description.{ext}` with the source's comments preserved. After writing the files, render a styled directory page so the user doesn't see the browser's raw directory listing:
+5. For each subsection: paraphrase the prose (rules in `references/paraphrasing-rules.md`), preserve technical content verbatim, write a 3-5 question quiz at the end. **All of this goes into `{chapter_dir}/chapter.yaml`** — see "Chapter source format" below. You never write chapter HTML by hand; the renderer turns the YAML into HTML in step 9.
+6. Extract code examples to standalone files in `{chapter_dir}/code-examples/NN-description.{ext}` with the source's comments preserved. Reference each file from the chapter source using the `!codefile code-examples/NN-name.ext` shortcode — the renderer inlines the file's content with the correct Prism language class and adds the "View full file" link. Never paste the code into the YAML body directly. After writing the files, render the directory listing page:
 
    ```bash
    python {coursesmith-generate-skill-dir}/scripts/render_code_index.py \
@@ -72,18 +88,39 @@ Read only this chapter's range, never the whole book. PDFs: `pdftotext -f {page_
    ```
 
    The chapter's lab resource card (step 9) should point at `lab.html`, not `lab-guide.md`. Jupyter labs (`lab.ipynb`) are not rendered to HTML; their resource card stays as a `download` link.
-8. **Ask before generating Anki.** AskUserQuestion: "Generate an Anki flashcard deck for this chapter?" — `"No, skip Anki"` (Recommended, default) / `"Yes, generate cards"`.
+8. **Ask the user before generating Anki cards.** Cards take time and are not everyone's review style, so default to no:
 
-   - **No:** `card_count: 0`, omit the Anki resource card, go to step 9.
-   - **Yes:** generate 15-30 cloze cards per `references/anki-card-rules.md`, write `cards.json`, run `python {coursesmith-generate-skill-dir}/scripts/generate_anki.py --cards cards.json --deck-name "{Book Title} :: Chapter {N}: {Chapter Title}" --output {chapter_dir}/anki-deck.apkg`, delete `cards.json`.
+   ```
+   AskUserQuestion: "Generate an Anki flashcard deck for this chapter?"
+     - Option 1 (highlighted as Recommended): "No, skip Anki" - default
+     - Option 2: "Yes, generate cards"
+   ```
 
-   In loop mode, ask once per chapter (the user can change their mind for denser chapters).
-9. Render the chapter `index.html` from `templates/chapter.html`, substituting the chapter content, subsections, code blocks, quiz blocks, resource cards, and sidebar links. Resource cards to render:
+   If the user picks **No**: skip card generation, set `card_count: 0` in the manifest, and omit the Anki resource card from the chapter HTML. Move straight to step 9.
 
-   - **Anki Deck card** only if Anki was generated for this chapter (`card_count > 0`).
-   - **Lab card** points at `lab.html` for markdown labs, `lab.ipynb` for Jupyter labs, omitted for conceptual chapters.
-   - **Code Examples card** points at `code-examples/index.html` (the rendered listing), not the raw directory, and is omitted if the chapter has no code.
-10. Write the chapter into its folder, overwriting the placeholder created by init.
+   If the user picks **Yes**: generate 15-30 cloze cards using `references/anki-card-rules.md`, write them to a temporary `cards.json`, then:
+
+   ```bash
+   python {coursesmith-generate-skill-dir}/scripts/generate_anki.py \
+     --cards cards.json \
+     --deck-name "{Book Title} :: Chapter {N}: {Chapter Title}" \
+     --output {chapter_dir}/anki-deck.apkg
+   ```
+
+   Delete `cards.json` after the deck is built.
+
+   In **loop mode** (see below), ask once per chapter the same way; the user can hit the same default each time, or change their mind for a denser chapter.
+9. Write `{chapter_dir}/chapter.yaml` with the intro, subsections (each with markdown `body` and `quiz`), using the shortcodes below. Then render the chapter HTML:
+
+   ```bash
+   python {coursesmith-generate-skill-dir}/scripts/render_chapter.py \
+     --source   {chapter_dir}/chapter.yaml \
+     --manifest {output_dir}/manifest.json \
+     --output   {chapter_dir}/index.html
+   ```
+
+   The renderer handles the sidebar (from manifest.json), Prism JS includes (auto-detected from used languages), resource cards (auto-detected from files on disk — anki deck if `anki-deck.apkg` exists and `card_count > 0`; lab card if `lab.html`/`lab.ipynb` exists; code-examples card if the directory has files), and prev/next chapter nav.
+10. The renderer overwrites the placeholder created by init. Keep `chapter.yaml` alongside `index.html` — it's the editable source for future refine-mode runs.
 11. Update `manifest.json` for this chapter: `status: "ready"`, fill in `subsection_count`, `card_count` (0 if user declined Anki), `lab_type`, and `subsections` (each `{id, title}`), set `last_modified` to the current ISO 8601 timestamp.
 12. Re-render the roadmap `index.html` from the manifest so the chapter shows as ready.
 13. Tell the user the chapter is done and which is next, e.g.:
@@ -106,11 +143,13 @@ Mapping:
 
 | User asks for | Regenerate |
 |---|---|
-| "quizzes too easy" / "more challenging quiz" | the affected subsection quiz block(s) inside `{chapter_dir}/index.html` |
-| "more cards" / "different cards" | `anki-deck.apkg`, update `card_count` in manifest |
-| "lab should use Docker" / "different lab" | `lab.ipynb` or `lab-guide.md`, update `lab_type` if it changed |
-| "rewrite notes more concisely" / "more detail on X" | the subsection bodies in `{chapter_dir}/index.html` |
-| "fix code example NN" | the file in `{chapter_dir}/code-examples/` and the inline copy in `index.html` |
+| "quizzes too easy" / "more challenging quiz" | the affected subsection's `quiz:` block in `{chapter_dir}/chapter.yaml`, then re-run `render_chapter.py` |
+| "more cards" / "different cards" | `anki-deck.apkg`, update `card_count` in manifest, then re-run `render_chapter.py` (the renderer picks up the new count from the manifest) |
+| "lab should use Docker" / "different lab" | `lab.ipynb` or `lab-guide.md`, update `lab_type` in manifest if it changed; if the lab markup changes, also re-run `render_lab.py` |
+| "rewrite notes more concisely" / "more detail on X" | the affected subsection's `body:` in `{chapter_dir}/chapter.yaml`, then re-run `render_chapter.py` |
+| "fix code example NN" | edit the file in `{chapter_dir}/code-examples/`, then re-run `render_chapter.py` (the renderer re-reads the file via `!codefile`) |
+
+Every refine path ends with re-running `render_chapter.py`. You never edit `index.html` directly.
 
 After regenerating, update `manifest.json` with a new `last_modified` timestamp on that chapter. Do not re-render the roadmap unless `status` changed.
 
@@ -128,47 +167,162 @@ If context runs tight mid-loop, stop cleanly, leave the manifest consistent, and
 
 The on-disk layout after several runs:
 
-Per chapter folder (`chapters/NN-{slug}/`): `index.html`, optional `anki-deck.apkg`, optional `code-examples/NN-*.ext` (only if chapter has code), and exactly one of `lab.ipynb` / `lab-guide.md` / neither.
+```
+study-guide-{book-slug}/
+├── index.html                     # Roadmap; re-rendered after every chapter
+├── manifest.json                  # Updated after every chapter
+├── assets/
+│   ├── styles.css
+│   └── script.js
+└── chapters/
+    └── NN-chapter-slug/           # NN zero-padded
+        ├── chapter.yaml           # Authored source: intro, subsections, quizzes
+        ├── index.html             # Rendered from chapter.yaml (placeholder until first run)
+        ├── anki-deck.apkg
+        ├── code-examples/         # Only if chapter has code
+        │   ├── 01-hello.py
+        │   └── ...
+        ├── lab.ipynb              # Or lab-guide.md, or neither
+        └── lab-guide.md
+```
 
-## Working with code in the source
+A chapter has `lab.ipynb` OR `lab-guide.md` OR neither - never both.
 
-- **Inline:** `<pre><code class="language-X">...</code></pre>` (Prism.js highlights; init's `script.js` adds a Copy button). Below the block, link to the standalone file: `<a class="code-fullfile-link" href="code-examples/NN-name.ext">View full file</a>`.
-- **Standalone:** write the full file under `code-examples/NN-description.ext`, source's comments / names / structure preserved exactly, numbered in source order.
-- **Never refactor, modernise, or fix the source's code.** The user's mental model must match the page. If the source's code is buggy, preserve the bug and add a `<div class="note warning">` flagging it.
+## Chapter source format
 
-## Quiz format
+The model writes `chapter.yaml` per chapter, not HTML. The renderer expands it. Full schema lives in `templates/chapter.yaml`; the gist:
 
-Each subsection ends with a `<details class="quiz-block">` containing 3-5 questions. Two question types:
+```yaml
+intro: |
+  One-paragraph framing in markdown.
 
-- **MCQ**: `<div class="quiz-question" data-type="mcq" data-correct="b">` with 4 options as `<label class="quiz-option" data-value="a|b|c|d">`. One correct. Always include a brief `<div class="quiz-explanation">` revealed on submit.
-- **Short answer**: `<div class="quiz-question" data-type="short">` with a text input. The model answer is revealed on "Show model answer".
+subsections:
+  - id: short-kebab-case-id
+    title: Section title
+    body: |
+      Markdown body. Paragraphs, lists, fenced code blocks, pipe tables,
+      and the shortcodes below.
+    quiz:
+      - mcq: Question text?
+        options: [A, B, C, D]
+        correct: 2          # 1-indexed, or letter "a"/"b"/"c"/"d"
+        explain: Why the correct answer is correct.
+      - short: Question text?
+        answer: Model answer text.
+```
 
-All answers are embedded in the HTML; the user grades themselves for short-answer. No backend. The exact markup is in `templates/chapter.html`.
+### Markdown features
+
+Standard CommonMark plus: fenced code blocks with language tags (` ```bash `, ` ```python `, etc.), pipe tables, sane lists. Inline `` `code` `` works.
+
+### Shortcodes
+
+Block-level (each on its own line, surrounded by blank lines):
+
+- `!codefile <relative-path>` — inlines the file's content as a Prism-highlighted `<pre><code>` block with a "View full file" link beneath. Path is relative to the chapter directory. Use this for every code example; **never paste code into the YAML body directly.**
+- `!figure <path> "<caption>"` — embeds an image with a caption. Quotes around the caption are required if it contains spaces.
+
+Block fences (multi-line, paired `:::` markers):
+
+- `:::note` ... `:::` — plain informational callout. Markdown inside is rendered.
+- `:::note warning` ... `:::` — yellow warning box. Use for "don't run this on a target you don't own", deprecated tooling, breaking gotchas.
+- `:::note tip` ... `:::` — green tip box. Use for pro-tips that aren't required reading.
+- `:::note danger` ... `:::` — red danger box. Use sparingly, for destructive or legally risky operations.
+- `:::terminal [shell]` ... `:::` — multi-line interactive terminal session with monospace styling. Use when the source shows a prompt sequence with mixed input and output. The optional shell argument sets syntax highlighting: `bash` (default), `powershell`, `batch`, `python` (Python REPL), `sql` (mysql/psql), or any other Prism language. Examples:
+  - `:::terminal` — generic bash session, `$` or `#` prompts
+  - `:::terminal powershell` — `PS C:\>` prompts
+  - `:::terminal batch` — Windows `cmd.exe` `C:\>` prompts
+  - `:::terminal python` — `>>>` REPL prompts
+
+Inline shortcodes (used inside paragraphs):
+
+- `!cve CVE-2024-1234` — renders as a link to the NVD page for the given CVE ID. Case-insensitive.
+- `!mitre T1059.001` — renders as a link to the corresponding ATT&CK technique page. Supports parent IDs (`T1059`) and sub-techniques (`T1059.001`).
+
+### Code examples on disk
+
+Each code example exists once: as a standalone file in `{chapter_dir}/code-examples/NN-description.{ext}`. The chapter body references it via `!codefile code-examples/NN-description.ext`. The renderer reads the file at render time, inlines it under the correct Prism language class (mapped from the extension), and adds the "View full file" link automatically.
+
+- Name files `NN-description.ext`, numbered in source order.
+- Preserve the source author's comments, variable names, and structure exactly.
+- **Do not refactor, modernise, or improve the source's code.** The reader is learning from this book; their mental model needs to match what's on the page. If the source's code is buggy, preserve the bug verbatim and flag it with `:::note warning`.
+
+### Source genre and language coverage
+
+This skill is used for IT and cyber security books across the full genre — not just one language. The renderer covers the languages and file types that come up in this space:
+
+| Genre | Common file extensions the renderer highlights |
+|---|---|
+| Shell scripting / Linux ops / pentest tooling | `.sh`, `.bash`, `.zsh` |
+| Windows / PowerShell / Active Directory | `.ps1`, `.psm1`, `.psd1`, `.bat`, `.cmd` |
+| Python pentest / offensive security | `.py` |
+| Web security (XSS, SQLi, SSRF) | `.js`, `.ts`, `.php`, `.html`, `.css`, `.sql`, `.http` |
+| Mobile security | `.kt`, `.swift`, `.java` |
+| Exploit dev / reverse engineering / malware analysis | `.c`, `.cpp`, `.asm`, `.s`, `.nasm`, `.diff`, `.patch` |
+| Modern security tooling | `.rs`, `.go` |
+| Network / NSE scripting | `.lua` |
+| Cloud / DevSecOps / IaC | `.tf`, `.hcl`, `.yaml`, `.yml`, `.json`, `.toml`, `Dockerfile`, `Makefile` |
+| Forensics / IR / API testing | `.http`, `.json`, `.xml`, `.sql` |
+| Legacy malware / scripting | `.bat`, `.cmd`, `.pl`, `.rb` |
+
+If a chapter has **no code at all** (threat modelling, policy, methodology, ATT&CK theory, governance), simply omit `!codefile` from the YAML. The renderer skips the code-examples resource card and skips the Prism CDN includes entirely on pure-prose chapters. Use `:::note`, `!cve`, `!mitre`, and `!figure` heavily for these chapters instead.
+
+If a chapter mixes several languages (e.g. a web-shell chapter showing PHP + JavaScript + HTTP requests), nothing special is needed — Prism components auto-load per language detected on the page.
+
+If a source uses a language not in the table above, write it with a plain fenced code block (` ```name `) and the renderer will pass the class through. Highlighting won't apply unless Prism happens to have a component for that name, but the code will still render correctly and stay monospaced.
 
 ## Anki cards
 
-15-30 cards per chapter (scaled to density, don't pad). Rules in `references/anki-card-rules.md`. `scripts/generate_anki.py` takes `{text, extra}` JSON + deck name, auto-installs `genanki` if missing.
+Read `references/anki-card-rules.md` for what to clozify (definitions, command syntax, defaults, IDs, function signatures) and what to skip (long prose, conceptual paragraphs without a discrete fact). 15-30 cards per chapter, scaled to chapter density - don't pad.
+
+The `scripts/generate_anki.py` script takes a JSON list of cards (each `{text, extra}`) plus a deck name and writes the `.apkg`. The script auto-installs `genanki` if missing.
 
 ## Bundled files
 
-- `templates/`: `chapter.html`, `lab.ipynb`, `lab-guide.md`
-- `scripts/`: `generate_anki.py`, `render_lab.py`, `render_code_index.py`
-- `references/`: `paraphrasing-rules.md`, `lab-decisions.md`, `anki-card-rules.md`
+| File | Purpose |
+|---|---|
+| `templates/chapter.yaml` | **Authoring schema** — copy/refer to when writing each chapter's source file |
+| `templates/lab.ipynb` | Jupyter notebook lab template |
+| `templates/lab-guide.md` | Markdown lab guide template (non-Python labs) |
+| `scripts/render_chapter.py` | **Renders `chapter.yaml` to `index.html`.** Handles shortcodes, quiz markup, sidebar from manifest, selective Prism includes, resource cards from disk |
+| `scripts/render_lab.py` | Renders `lab-guide.md` to a styled `lab.html` matching the course theme |
+| `scripts/render_code_index.py` | Renders `code-examples/index.html` listing every script with the course theme |
+| `scripts/generate_anki.py` | genanki wrapper for cloze decks (only used if the user opts in) |
+| `references/paraphrasing-rules.md` | Detailed paraphrasing guidance with worked example |
+| `references/lab-decisions.md` | Lab type decision rules per content type |
+| `references/anki-card-rules.md` | What to clozify, formatting, volume guidance |
 
-Zip backups: use `coursesmith-init/scripts/package_guide.py`. Ephemeral environments: `coursesmith-init/references/non-claude-code-fallback.md`.
+The `package_guide.py` zip script lives in `coursesmith-init`. If the user explicitly asks for a zip backup, use it from there:
+
+```bash
+python {coursesmith-init-skill-dir}/scripts/package_guide.py \
+  --source {output_dir} \
+  --output {output_dir}.zip
+```
+
+For running outside Claude Code, see `references/non-claude-code-fallback.md` in `coursesmith-init`.
 
 ## When things go wrong
 
-- **OCR'd PDF is gibberish:** stop. Tell the user. Don't generate notes from broken text.
-- **Chapter too long for one turn:** split into halves with visible subsection-heading splits; continue in the next turn.
-- **Outdated tooling in source (e.g. Python 2):** preserve code verbatim, add a one-line `<div class="note">` in the intro flagging the version and what differs today. Don't silently modernise.
-- **Context tight mid-loop:** stop cleanly; folder on disk is consistent. Tell the user where to resume.
+- **OCR'd PDF is gibberish for this chapter:** stop. Tell the user. Don't generate notes from broken text.
+- **Chapter is too long for one turn:** split it into halves. Generate the first half, then continue the second half in the next turn. Make the split visible (clear subsection headings).
+- **Source uses outdated tooling (e.g. Python 2):** preserve the source's code verbatim, but add a one-line `:::note` block in the chapter intro noting the version mismatch and what differs in modern equivalents. Don't silently modernise.
+- **Context runs out mid-loop (loop mode):** stop cleanly. The folder on disk holds every chapter done so far. Tell the user where you stopped and how to resume.
 
 ## Output checklist (per chapter)
 
-- [ ] Subsections each have a 3-5 question quiz
-- [ ] Code extracted to `code-examples/` + inline blocks linked; `code-examples/index.html` rendered (if any code)
-- [ ] Lab produced (or chapter marked conceptual-only); markdown labs have `lab.html` rendered alongside the `.md`
-- [ ] Anki: user asked, deck generated only if opted in
-- [ ] `manifest.json` and roadmap re-rendered
-- [ ] No em dashes / no AI tells; technical specifics (code, commands, paths, IDs) verbatim; no long verbatim prose
+Before declaring a chapter done, verify:
+
+- [ ] `chapter.yaml` written; `render_chapter.py` ran without errors and produced `index.html`
+- [ ] All subsections have quizzes (3-5 questions each) in the YAML `quiz:` block
+- [ ] Code examples extracted to `code-examples/` and referenced via `!codefile` (never pasted into the YAML body)
+- [ ] `code-examples/index.html` rendered by `render_code_index.py` (if the chapter has code)
+- [ ] Lab file produced (or chapter explicitly marked as conceptual-only)
+- [ ] For markdown labs: `lab.html` rendered by `render_lab.py` alongside the `.md` source
+- [ ] User was asked about Anki; deck generated only if they opted in (15-30 valid cloze cards)
+- [ ] `manifest.json` updated (`status: "ready"`, counts, `last_modified`)
+- [ ] Roadmap `index.html` re-rendered
+- [ ] No em dashes, no emojis (unless source-driven), British English throughout
+- [ ] No verbatim long passages from source
+- [ ] Technical specifics (code, commands, paths, IDs) preserved verbatim
+- [ ] Chapter written into `output_dir` on disk, alongside existing chapters
