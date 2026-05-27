@@ -91,9 +91,11 @@ For `.docx` / `.epub` sources, set `page_start` and `page_end` to `0` in the man
 
 ### 7. Hand off to coursesmith-generate
 
-Invoke `coursesmith-generate` via the Skill tool to do chapter 1 in the same run, so the user's first prompt produces scaffold + chapter 1.
+**This step is mandatory and automatic.** As soon as the scaffold message in step 6 has been sent, invoke `coursesmith-generate` via the Skill tool in the very next action to produce chapter 1. The user's first prompt is expected to yield scaffold + chapter 1 in a single run.
 
-If the user explicitly asked for "setup only" or "don't do chapter 1 yet", skip this step and tell them: "Scaffold ready. Say 'do chapter 1' (or invoke coursesmith-generate) whenever you want to start."
+**Do not ask the user whether to proceed.** Do not say "want me to generate chapter 1?", "should I continue?", or any equivalent confirmation. The handoff is part of the contract; asking breaks the flow. Just invoke the next skill.
+
+The only exception: if the user's original prompt explicitly said "setup only", "scaffold only", "don't do chapter 1 yet", or equivalent. In that case, skip the handoff and tell them: "Scaffold ready. Say 'do chapter 1' (or invoke coursesmith-generate) whenever you want to start." A neutral prompt like "build a course from this PDF" is NOT an opt-out; proceed to chapter 1.
 
 ## Bundled files
 
