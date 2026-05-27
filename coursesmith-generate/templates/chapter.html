@@ -21,11 +21,21 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
   <script>
-    /* Anti-flash: set data-theme before paint if the user has a saved preference */
+    /* Anti-flash: set data-theme before paint. URL ?theme= wins over
+       localStorage so navigation between roadmap and chapters carries
+       the theme even when opened via file:// (some browsers isolate
+       localStorage per path under file://). */
     (function () {
-      var saved = localStorage.getItem('coursesmith-theme');
-      if (saved === 'light' || saved === 'dark') {
-        document.documentElement.setAttribute('data-theme', saved);
+      var fromUrl = null;
+      try {
+        fromUrl = new URLSearchParams(window.location.search).get('theme');
+      } catch (e) { /* no-op */ }
+      var theme = (fromUrl === 'light' || fromUrl === 'dark')
+        ? fromUrl
+        : localStorage.getItem('coursesmith-theme');
+      if (theme === 'light' || theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', theme);
+        try { localStorage.setItem('coursesmith-theme', theme); } catch (e) {}
       }
     })();
   </script>
