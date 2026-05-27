@@ -11,30 +11,11 @@ This is **one-time setup per book**. If a study-guide folder already exists for 
 
 ## What this skill produces
 
-A folder on disk that the user can open in any browser:
+`study-guide-{book-slug}/` containing `index.html` (roadmap), `manifest.json`, `assets/{styles.css,script.js}`, and `chapters/NN-{slug}/index.html` placeholders for every chapter. Placeholders are clickable from day one; `coursesmith-generate` overwrites them with real content later.
 
-```
-study-guide-{book-slug}/
-├── index.html             # Roadmap landing page, links to every chapter
-├── manifest.json          # Book metadata, paths, chapter list with page ranges
-├── assets/
-│   ├── styles.css
-│   └── script.js
-└── chapters/
-    └── NN-chapter-slug/
-        └── index.html     # Placeholder page (chapter not yet generated)
-```
+## Core rule
 
-Every chapter starts as a clickable placeholder so the roadmap works from day one. `coursesmith-generate` overwrites placeholders with real chapter content over successive sessions.
-
-## Core principles
-
-The handful of rules that hold across init and generate:
-
-- **Paraphrase, never reproduce.** Publisher copyright is respected: the output is paraphrased educational notes for personal study, not redistribution. (Applies to `coursesmith-generate`; init only writes scaffolding, no book content.)
-- **Technical fidelity.** Code, commands, paths, version numbers, error strings are preserved verbatim.
-- **No fabrication.** Do not invent chapters, page ranges, or table-of-contents entries that aren't in the source.
-- **British English, no AI tells.** No em dashes. No "delve", "leverage" as a verb, "robust", "comprehensive", "navigate the complexities". Plain technical writing.
+**No fabrication.** Do not invent chapters, page ranges, or ToC entries that aren't in the source. (Paraphrasing rules don't apply here — init writes scaffolding, not book content.)
 
 ## Steps
 
@@ -91,11 +72,7 @@ For `.docx` / `.epub` sources, set `page_start` and `page_end` to `0` in the man
 
 ### 7. Hand off to coursesmith-generate
 
-**This step is mandatory and automatic.** As soon as the scaffold message in step 6 has been sent, invoke `coursesmith-generate` via the Skill tool in the very next action to produce chapter 1. The user's first prompt is expected to yield scaffold + chapter 1 in a single run.
-
-**Do not ask the user whether to proceed.** Do not say "want me to generate chapter 1?", "should I continue?", or any equivalent confirmation. The handoff is part of the contract; asking breaks the flow. Just invoke the next skill.
-
-The only exception: if the user's original prompt explicitly said "setup only", "scaffold only", "don't do chapter 1 yet", or equivalent. In that case, skip the handoff and tell them: "Scaffold ready. Say 'do chapter 1' (or invoke coursesmith-generate) whenever you want to start." A neutral prompt like "build a course from this PDF" is NOT an opt-out; proceed to chapter 1.
+Invoke `coursesmith-generate` immediately after step 6, no confirmation prompt — the handoff is part of the contract. **Exception:** if the user's original prompt said "setup only", "scaffold only", or "don't do chapter 1 yet", stop instead and tell them: "Scaffold ready. Say 'do chapter 1' whenever you want to start." A neutral prompt ("build a course from this PDF") is not an opt-out.
 
 ## Bundled files
 
