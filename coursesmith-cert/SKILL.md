@@ -43,18 +43,7 @@ Optional flags the user might ask for:
 - `--accent "#ff4136"` - override the cover-derived accent with an explicit hex
 - `--date "26 May 2026"` - override the completion date (defaults to today, British format)
 
-The script:
-1. Auto-installs `playwright`, `Pillow`, `pypdf` if missing; runs `playwright install chromium` if the browser is not cached.
-2. Validates the manifest (every chapter ready).
-3. Extracts the cover image: `pdfimages -f 1 -l 1 -png` first, falls back to `pdftoppm -f 1 -l 1 -png -r 100`.
-4. Derives the accent: two-pass dominant-colour extraction (top 25% banner first, then full cover), filters neutrals (saturation > 0.25, value in 0.15-0.90), neonifies in OKLCH (L=0.72 dark / L=0.45 light, max chroma). Falls back to `#7cf07c` if no vivid cluster.
-5. Extracts the author: PDF metadata `/Author` then `/Publisher` (with a blacklist for typesetter tools, emails, and oversized values), then title-page text scrape, then `None`.
-6. Generates a deterministic cert ID: `f"CSM-{sha256('{slug}|{date}').hexdigest()[:4].upper()}-{year}"`.
-7. Substitutes tokens into `templates/certificate.html`. If author is `None`, strips the entire `<div class="book-author">` element.
-8. Sets `<html data-theme="dark|light">` before screenshot.
-9. Renders with Playwright Chromium at viewport 1200x800, screenshots to `{output_dir}/certificate.png`.
-10. Updates `manifest.json` with a `certificate` block.
-11. Re-renders the roadmap `index.html` from the manifest, injecting the certificate card at the top.
+The script auto-installs `playwright` / `Pillow` / `pypdf` if missing, extracts the cover (pdfimages → pdftoppm fallback), derives a neon accent in OKLCH, scrapes the author from PDF metadata or the title page, generates a deterministic cert ID (`CSM-{sha256(slug|date)[:4]}-{year}`), substitutes tokens into `templates/certificate.html`, renders via Playwright Chromium at 1200x800, writes `certificate.png`, and updates the manifest + roadmap. Implementation details live in `scripts/render_certificate.py` and `references/neonification-rules.md`.
 
 Tell the user where the file landed:
 
@@ -92,7 +81,7 @@ After regenerating, the script updates `manifest.json` automatically. Do not re-
 
 ## Running outside Claude Code
 
-Same caveats as the rest of Coursesmith - the skill assumes the user's filesystem persists between sessions. The certificate PNG and the updated roadmap are written to the same study-guide folder, so the existing zip-handover fallback (see `coursesmith-init/references/non-claude-code-fallback.md`) covers this skill too.
+Assumes persistent filesystem; for ephemeral environments use the zip-handover fallback in `coursesmith-init/references/non-claude-code-fallback.md`.
 
 ## When things go wrong
 

@@ -34,27 +34,11 @@ These are non-negotiable for every chunk of generated content:
 - **Technical fidelity is non-negotiable.** Paraphrase prose. Do not paraphrase: command syntax, code, exact error messages, file paths, registry keys, API names, version numbers, configuration values, or anything where the wording *is* the technical content. If condensing risks losing a detail, keep the detail.
 - **No fabrication.** Do not invent or extrapolate beyond the source. If the source is ambiguous, preserve the ambiguity. Do not add information that isn't there, even if it would be technically correct.
 - **Teach the subject, don't narrate the chapter.** The grammatical subject of your sentences should be the thing being taught (Bash, TCP, the handshake), not the document ("this chapter", "the book", "we will cover"). No previews of structure, no "everything later builds on this" scaffolding, no lists of upcoming section headings dressed up as prose. The reader is here to learn the topic, not to be told what the chapter contains. See the intro worked example in `references/paraphrasing-rules.md`.
-- **British English, no AI tells.** No em dashes. No emojis unless the source uses them. No "delve", "leverage" (verb), "robust", "comprehensive", "navigate the complexities", "in today's fast-paced world", "it's important to note". Plain technical writing, matching the source's voice where possible.
+- **British English, no AI tells.** Full no-go list in `references/paraphrasing-rules.md`. Plain technical writing, match the source's voice.
 
 ## Reading the chapter off disk
 
-Read only what this chapter needs. Never load the whole book.
-
-For PDFs, extract the chapter's pages using its stored range:
-
-```bash
-pdftotext -f {page_start} -l {page_end} "{source_pdf}" -
-```
-
-For code- or figure-heavy chapters where layout matters, add `-layout` to preserve columns and indentation. For embedded images the user needs:
-
-```bash
-pdfimages -f {page_start} -l {page_end} -png "{source_pdf}" {output_dir}/chapters/NN-slug/images/img
-```
-
-For `.docx` / `.epub` sources (manifest shows `page_start: 0`), split by chapter heading and read just that chapter's range.
-
-If `pdftotext` is missing, install poppler-utils, or fall back to `pypdf` / `pdfplumber`.
+Read only this chapter's range, never the whole book. PDFs: `pdftotext -f {page_start} -l {page_end} "{source_pdf}" -` (add `-layout` for code/figure-heavy chapters). For embedded images: `pdfimages -f {page_start} -l {page_end} -png "{source_pdf}" {chapter_dir}/images/img`. For `.docx` / `.epub` (manifest shows `page_start: 0`), split by heading. Fallback if `pdftotext` is missing: `pypdf` or `pdfplumber`.
 
 ## Per-chapter flow (next-chapter and named-chapter modes)
 
@@ -88,28 +72,12 @@ If `pdftotext` is missing, install poppler-utils, or fall back to `pypdf` / `pdf
    ```
 
    The chapter's lab resource card (step 9) should point at `lab.html`, not `lab-guide.md`. Jupyter labs (`lab.ipynb`) are not rendered to HTML; their resource card stays as a `download` link.
-8. **Ask the user before generating Anki cards.** Cards take time and are not everyone's review style, so default to no:
+8. **Ask before generating Anki.** AskUserQuestion: "Generate an Anki flashcard deck for this chapter?" — `"No, skip Anki"` (Recommended, default) / `"Yes, generate cards"`.
 
-   ```
-   AskUserQuestion: "Generate an Anki flashcard deck for this chapter?"
-     - Option 1 (highlighted as Recommended): "No, skip Anki" - default
-     - Option 2: "Yes, generate cards"
-   ```
+   - **No:** `card_count: 0`, omit the Anki resource card, go to step 9.
+   - **Yes:** generate 15-30 cloze cards per `references/anki-card-rules.md`, write `cards.json`, run `python {coursesmith-generate-skill-dir}/scripts/generate_anki.py --cards cards.json --deck-name "{Book Title} :: Chapter {N}: {Chapter Title}" --output {chapter_dir}/anki-deck.apkg`, delete `cards.json`.
 
-   If the user picks **No**: skip card generation, set `card_count: 0` in the manifest, and omit the Anki resource card from the chapter HTML. Move straight to step 9.
-
-   If the user picks **Yes**: generate 15-30 cloze cards using `references/anki-card-rules.md`, write them to a temporary `cards.json`, then:
-
-   ```bash
-   python {coursesmith-generate-skill-dir}/scripts/generate_anki.py \
-     --cards cards.json \
-     --deck-name "{Book Title} :: Chapter {N}: {Chapter Title}" \
-     --output {chapter_dir}/anki-deck.apkg
-   ```
-
-   Delete `cards.json` after the deck is built.
-
-   In **loop mode** (see below), ask once per chapter the same way; the user can hit the same default each time, or change their mind for a denser chapter.
+   In loop mode, ask once per chapter (the user can change their mind for denser chapters).
 9. Render the chapter `index.html` from `templates/chapter.html`, substituting the chapter content, subsections, code blocks, quiz blocks, resource cards, and sidebar links. Resource cards to render:
 
    - **Anki Deck card** only if Anki was generated for this chapter (`card_count > 0`).
@@ -160,31 +128,13 @@ If context runs tight mid-loop, stop cleanly, leave the manifest consistent, and
 
 The on-disk layout after several runs:
 
-```
-study-guide-{book-slug}/
-├── index.html                     # Roadmap; re-rendered after every chapter
-├── manifest.json                  # Updated after every chapter
-├── assets/
-│   ├── styles.css
-│   └── script.js
-└── chapters/
-    └── NN-chapter-slug/           # NN zero-padded
-        ├── index.html             # Real content (or placeholder if not yet done)
-        ├── anki-deck.apkg
-        ├── code-examples/         # Only if chapter has code
-        │   ├── 01-hello.py
-        │   └── ...
-        ├── lab.ipynb              # Or lab-guide.md, or neither
-        └── lab-guide.md
-```
-
-A chapter has `lab.ipynb` OR `lab-guide.md` OR neither - never both.
+Per chapter folder (`chapters/NN-{slug}/`): `index.html`, optional `anki-deck.apkg`, optional `code-examples/NN-*.ext` (only if chapter has code), and exactly one of `lab.ipynb` / `lab-guide.md` / neither.
 
 ## Working with code in the source
 
-1. **Inline in notes:** wrap in `<pre><code class="language-X">...</code></pre>` so Prism.js highlights it. The `script.js` from init adds a Copy button automatically. Below the inline block, link to the standalone file: `<a class="code-fullfile-link" href="code-examples/NN-name.ext">View full file</a>`.
-2. **Standalone in `code-examples/`:** write the full file, preserve the source author's comments, variable names, and structure exactly. Name files `NN-description.ext`, numbered in source order.
-3. **Do not refactor, modernise, or improve the source's code.** The user is learning from this book; their mental model needs to match what's on the page. If the source's code is buggy, preserve the bug verbatim and add a small `<div class="note warning">` flagging it.
+- **Inline:** `<pre><code class="language-X">...</code></pre>` (Prism.js highlights; init's `script.js` adds a Copy button). Below the block, link to the standalone file: `<a class="code-fullfile-link" href="code-examples/NN-name.ext">View full file</a>`.
+- **Standalone:** write the full file under `code-examples/NN-description.ext`, source's comments / names / structure preserved exactly, numbered in source order.
+- **Never refactor, modernise, or fix the source's code.** The user's mental model must match the page. If the source's code is buggy, preserve the bug and add a `<div class="note warning">` flagging it.
 
 ## Quiz format
 
@@ -197,55 +147,28 @@ All answers are embedded in the HTML; the user grades themselves for short-answe
 
 ## Anki cards
 
-Read `references/anki-card-rules.md` for what to clozify (definitions, command syntax, defaults, IDs, function signatures) and what to skip (long prose, conceptual paragraphs without a discrete fact). 15-30 cards per chapter, scaled to chapter density - don't pad.
-
-The `scripts/generate_anki.py` script takes a JSON list of cards (each `{text, extra}`) plus a deck name and writes the `.apkg`. The script auto-installs `genanki` if missing.
+15-30 cards per chapter (scaled to density, don't pad). Rules in `references/anki-card-rules.md`. `scripts/generate_anki.py` takes `{text, extra}` JSON + deck name, auto-installs `genanki` if missing.
 
 ## Bundled files
 
-| File | Purpose |
-|---|---|
-| `templates/chapter.html` | Chapter notes page template (real content) |
-| `templates/lab.ipynb` | Jupyter notebook lab template |
-| `templates/lab-guide.md` | Markdown lab guide template (non-Python labs) |
-| `scripts/generate_anki.py` | genanki wrapper for cloze decks (only used if the user opts in) |
-| `scripts/render_lab.py` | Renders `lab-guide.md` to a styled `lab.html` matching the course theme |
-| `scripts/render_code_index.py` | Renders `code-examples/index.html` listing every script with the course theme |
-| `references/paraphrasing-rules.md` | Detailed paraphrasing guidance with worked example |
-| `references/lab-decisions.md` | Lab type decision rules per content type |
-| `references/anki-card-rules.md` | What to clozify, formatting, volume guidance |
+- `templates/`: `chapter.html`, `lab.ipynb`, `lab-guide.md`
+- `scripts/`: `generate_anki.py`, `render_lab.py`, `render_code_index.py`
+- `references/`: `paraphrasing-rules.md`, `lab-decisions.md`, `anki-card-rules.md`
 
-The `package_guide.py` zip script lives in `coursesmith-init`. If the user explicitly asks for a zip backup, use it from there:
-
-```bash
-python {coursesmith-init-skill-dir}/scripts/package_guide.py \
-  --source {output_dir} \
-  --output {output_dir}.zip
-```
-
-For running outside Claude Code, see `references/non-claude-code-fallback.md` in `coursesmith-init`.
+Zip backups: use `coursesmith-init/scripts/package_guide.py`. Ephemeral environments: `coursesmith-init/references/non-claude-code-fallback.md`.
 
 ## When things go wrong
 
-- **OCR'd PDF is gibberish for this chapter:** stop. Tell the user. Don't generate notes from broken text.
-- **Chapter is too long for one turn:** split it into halves. Generate the first half, then continue the second half in the next turn. Make the split visible (clear subsection headings).
-- **Source uses outdated tooling (e.g. Python 2):** preserve the source's code verbatim, but add a one-line `<div class="note">` in the chapter intro noting the version mismatch and what differs in modern equivalents. Don't silently modernise.
-- **Context runs out mid-loop (loop mode):** stop cleanly. The folder on disk holds every chapter done so far. Tell the user where you stopped and how to resume.
+- **OCR'd PDF is gibberish:** stop. Tell the user. Don't generate notes from broken text.
+- **Chapter too long for one turn:** split into halves with visible subsection-heading splits; continue in the next turn.
+- **Outdated tooling in source (e.g. Python 2):** preserve code verbatim, add a one-line `<div class="note">` in the intro flagging the version and what differs today. Don't silently modernise.
+- **Context tight mid-loop:** stop cleanly; folder on disk is consistent. Tell the user where to resume.
 
 ## Output checklist (per chapter)
 
-Before declaring a chapter done, verify:
-
-- [ ] Chapter `index.html` written and renders without errors
-- [ ] All subsections have quizzes (3-5 questions each)
-- [ ] Code examples extracted to `code-examples/` and linked from notes
-- [ ] `code-examples/index.html` rendered by `render_code_index.py` (if the chapter has code)
-- [ ] Lab file produced (or chapter explicitly marked as conceptual-only)
-- [ ] For markdown labs: `lab.html` rendered by `render_lab.py` alongside the `.md` source
-- [ ] User was asked about Anki; deck generated only if they opted in (15-30 valid cloze cards)
-- [ ] `manifest.json` updated (`status: "ready"`, counts, `last_modified`)
-- [ ] Roadmap `index.html` re-rendered
-- [ ] No em dashes, no emojis (unless source-driven), British English throughout
-- [ ] No verbatim long passages from source
-- [ ] Technical specifics (code, commands, paths, IDs) preserved verbatim
-- [ ] Chapter written into `output_dir` on disk, alongside existing chapters
+- [ ] Subsections each have a 3-5 question quiz
+- [ ] Code extracted to `code-examples/` + inline blocks linked; `code-examples/index.html` rendered (if any code)
+- [ ] Lab produced (or chapter marked conceptual-only); markdown labs have `lab.html` rendered alongside the `.md`
+- [ ] Anki: user asked, deck generated only if opted in
+- [ ] `manifest.json` and roadmap re-rendered
+- [ ] No em dashes / no AI tells; technical specifics (code, commands, paths, IDs) verbatim; no long verbatim prose
