@@ -10,6 +10,14 @@ The notes pages must be **paraphrased educational summaries**, not reproductions
 - Long anecdotes that don't carry technical content
 - Redundant summaries at the end of sections
 - "Why this matters" preambles unless they contain genuine technical insight
+- **Meta-narration about the chapter or book.** This is the subtler failure mode. Even after the obvious filler is gone, intros tend to drift into describing the document instead of teaching the topic. Cut:
+  - "This chapter sets up / walks through / covers / introduces..."
+  - "By the end of this chapter you will..."
+  - "Everything later in the book builds on this", "we'll return to this in chapter N"
+  - Sentences whose grammatical subject is *the chapter*, *the book*, or *we* (as in the author-and-reader "we")
+  - Lists of upcoming section headings stitched into a sentence ("...covers the syntactic core: variables, arithmetic, arrays, streams...")
+
+  If a sentence is *about the text* rather than *about the subject*, rewrite or delete it. The reader can see the section headings as they scroll; they don't need them announced in prose.
 
 ## What to keep verbatim
 
@@ -69,6 +77,29 @@ This is closer but still mirrors the source's structure too closely.
 > Once established, TCP guarantees in-order delivery and retransmits lost segments.
 
 This is shorter, restructured, but loses no technical detail. The handshake mechanics are preserved exactly because they're the technical content; the explanatory framing is rewritten.
+
+## Worked example: chapter intros
+
+Intros are the place meta-narration creeps back in even after the filler-cutting rules have been applied. The model strips "in this chapter we will explore" and then produces the same stance with different words. Watch for it.
+
+### Bad intro (narrates the chapter)
+
+> Bash is the command interpreter pentesters reach for to automate Linux tasks. This chapter sets up a working bash environment, walks through the building blocks of a script (shebang, comments, execution, debugging), and covers the syntactic core: variables, arithmetic, arrays, streams, operators, redirection, positional arguments, input prompting, and exit codes. Everything later in the book builds on these pieces.
+
+The first sentence is fine — its subject is *Bash*. The rest collapses into back-cover blurb: the subject becomes *this chapter*, the verbs are document verbs (*sets up*, *walks through*, *covers*), and the third sentence is pure scaffolding. The list of topics is just the upcoming section headings reformatted as prose, which is wasted words — the reader is about to see them anyway.
+
+### Good intro (teaches the subject)
+
+> Bash is the default command interpreter on most Linux systems, and the language pentesters reach for when they need to glue tools together, automate a foothold, or script a repeatable check across hosts. A bash script is a plain text file the shell reads top to bottom: each line is either a command, a control structure, or a variable manipulation. Before any of that runs, the shell needs to know two things — what interpreter to use (the shebang) and that the file is executable.
+
+Same opening sentence. After that, the subject of every sentence is *Bash*, *a script*, or *the shell* — never *the chapter*. There's no preview of what's coming; instead the intro starts teaching, and the next subsection picks up naturally with the shebang. The reader sees structure by scrolling, not by being told.
+
+### How to write intros this way
+
+- Open by saying what the topic *is* and where it sits in the world, not what the chapter will do with it.
+- If you want to motivate a topic, do it concretely (an example of when you'd reach for it), not by promising future coverage.
+- End the intro on a sentence that hands off into the first subsection's content — not on a roadmap of the chapter.
+- If you catch yourself writing "this chapter", "the book", or "we will", stop and rewrite with the topic as the subject.
 
 ## What if the source is very dense and there's nothing to cut?
 
