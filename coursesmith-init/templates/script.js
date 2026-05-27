@@ -28,6 +28,38 @@
     return matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   }
 
+  // When opened via file:// some browsers isolate localStorage per path,
+  // so the saved theme on the roadmap can't be read from a chapter page.
+  // The ?theme= URL param is the cross-page carrier; on load we hydrate
+  // localStorage from it, and on every link click we append it.
+  function hydrateThemeFromUrl() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get('theme');
+      if (t === 'light' || t === 'dark') {
+        localStorage.setItem(THEME_STORAGE_KEY, t);
+        document.documentElement.setAttribute('data-theme', t);
+      }
+    } catch (e) { /* no-op */ }
+  }
+
+  function initThemePropagation() {
+    document.addEventListener('click', (ev) => {
+      const a = ev.target.closest('a[href]');
+      if (!a) return;
+      const href = a.getAttribute('href');
+      // Skip external, anchor-only, or download links
+      if (!href || href.startsWith('#') || href.startsWith('mailto:') ||
+          /^[a-z]+:\/\//i.test(href) || a.hasAttribute('download')) return;
+      try {
+        const url = new URL(a.href, window.location.href);
+        if (url.origin !== window.location.origin) return;
+        url.searchParams.set('theme', currentTheme());
+        a.href = url.toString();
+      } catch (e) { /* no-op */ }
+    }, true);
+  }
+
   function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     try {
@@ -281,8 +313,10 @@
   // -----------------------------------------------------------------
   // Init
   // -----------------------------------------------------------------
+  hydrateThemeFromUrl();
   document.addEventListener('DOMContentLoaded', () => {
     initThemeToggle();
+    initThemePropagation();
     initQuizzes();
     initSubsectionComplete();
     initCopyButtons();
