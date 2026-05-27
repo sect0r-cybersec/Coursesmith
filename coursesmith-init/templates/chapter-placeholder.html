@@ -7,6 +7,25 @@
   <meta name="chapter-slug" content="{{CHAPTER_SLUG}}">
   <title>{{CHAPTER_TITLE}} - {{BOOK_TITLE}}</title>
   <link rel="stylesheet" href="../../assets/styles.css">
+  <script>
+    /* Anti-flash: set data-theme before paint. URL ?theme= wins over
+       localStorage so navigation between roadmap and chapters carries
+       the theme even when opened via file:// (some browsers isolate
+       localStorage per path under file://). */
+    (function () {
+      var fromUrl = null;
+      try {
+        fromUrl = new URLSearchParams(window.location.search).get('theme');
+      } catch (e) { /* no-op */ }
+      var theme = (fromUrl === 'light' || fromUrl === 'dark')
+        ? fromUrl
+        : localStorage.getItem('coursesmith-theme');
+      if (theme === 'light' || theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', theme);
+        try { localStorage.setItem('coursesmith-theme', theme); } catch (e) {}
+      }
+    })();
+  </script>
 </head>
 <body>
 
@@ -17,6 +36,7 @@
       <div class="breadcrumb">
         <a href="../../index.html">Roadmap</a> &nbsp;/&nbsp; Chapter {{CHAPTER_NUM}}
       </div>
+      <button class="theme-toggle" type="button" aria-label="Switch theme"></button>
     </div>
 
     <h1>{{CHAPTER_TITLE}}</h1>
