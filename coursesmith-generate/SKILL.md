@@ -62,9 +62,42 @@ If `pdftotext` is missing, install poppler-utils, or fall back to `pypdf` / `pdf
 3. Extract the chapter's pages off disk using the stored `page_start`/`page_end`.
 4. Identify the chapter's subsections from the extracted text. Aim for 3-7 subsections per chapter; group finer sub-subsections sensibly.
 5. For each subsection: paraphrase the prose (rules in `references/paraphrasing-rules.md`), preserve technical content verbatim, write a 3-5 question quiz at the end.
-6. Extract code examples. Inline them as syntax-highlighted blocks in the notes (Prism.js classes: `language-python`, `language-bash`, etc.) and also write each as a standalone file in `{chapter_dir}/code-examples/NN-description.{ext}` with the source's comments preserved.
+6. Extract code examples. Inline them as syntax-highlighted blocks in the notes (Prism.js classes: `language-python`, `language-bash`, etc.) and also write each as a standalone file in `{chapter_dir}/code-examples/NN-description.{ext}` with the source's comments preserved. After writing the files, render a styled directory page so the user doesn't see the browser's raw directory listing:
+
+   ```bash
+   python {coursesmith-generate-skill-dir}/scripts/render_code_index.py \
+     --dir {chapter_dir}/code-examples \
+     --book-title "{Book Title}" \
+     --chapter-num {N} \
+     --chapter-title "{Chapter Title}"
+   ```
+
+   If the chapter has no code examples, skip this step entirely (don't create an empty `code-examples/`).
 7. Decide the lab type using `references/lab-decisions.md`. Generate `lab.ipynb` (from `templates/lab.ipynb`) or `lab-guide.md` (from `templates/lab-guide.md`), or skip the lab entirely for purely conceptual chapters and note "Conceptual chapter, no hands-on lab" in the chapter intro.
-8. Generate 15-30 Anki cloze cards using `references/anki-card-rules.md`. Write them to a temporary `cards.json` and run:
+
+   For markdown-based labs (`lab-guide.md`), render a styled sibling `lab.html` so the lab page matches the rest of the course theme. Keep the markdown source alongside it for users who want to download or edit it:
+
+   ```bash
+   python {coursesmith-generate-skill-dir}/scripts/render_lab.py \
+     --input  {chapter_dir}/lab-guide.md \
+     --output {chapter_dir}/lab.html \
+     --book-title "{Book Title}" \
+     --chapter-num {N} \
+     --chapter-title "{Chapter Title}"
+   ```
+
+   The chapter's lab resource card (step 9) should point at `lab.html`, not `lab-guide.md`. Jupyter labs (`lab.ipynb`) are not rendered to HTML; their resource card stays as a `download` link.
+8. **Ask the user before generating Anki cards.** Cards take time and are not everyone's review style, so default to no:
+
+   ```
+   AskUserQuestion: "Generate an Anki flashcard deck for this chapter?"
+     - Option 1 (highlighted as Recommended): "No, skip Anki" - default
+     - Option 2: "Yes, generate cards"
+   ```
+
+   If the user picks **No**: skip card generation, set `card_count: 0` in the manifest, and omit the Anki resource card from the chapter HTML. Move straight to step 9.
+
+   If the user picks **Yes**: generate 15-30 cloze cards using `references/anki-card-rules.md`, write them to a temporary `cards.json`, then:
 
    ```bash
    python {coursesmith-generate-skill-dir}/scripts/generate_anki.py \
@@ -73,9 +106,16 @@ If `pdftotext` is missing, install poppler-utils, or fall back to `pypdf` / `pdf
      --output {chapter_dir}/anki-deck.apkg
    ```
 
-9. Render the chapter `index.html` from `templates/chapter.html`, substituting the chapter content, subsections, code blocks, quiz blocks, resource cards, and sidebar links.
+   Delete `cards.json` after the deck is built.
+
+   In **loop mode** (see below), ask once per chapter the same way; the user can hit the same default each time, or change their mind for a denser chapter.
+9. Render the chapter `index.html` from `templates/chapter.html`, substituting the chapter content, subsections, code blocks, quiz blocks, resource cards, and sidebar links. Resource cards to render:
+
+   - **Anki Deck card** only if Anki was generated for this chapter (`card_count > 0`).
+   - **Lab card** points at `lab.html` for markdown labs, `lab.ipynb` for Jupyter labs, omitted for conceptual chapters.
+   - **Code Examples card** points at `code-examples/index.html` (the rendered listing), not the raw directory, and is omitted if the chapter has no code.
 10. Write the chapter into its folder, overwriting the placeholder created by init.
-11. Update `manifest.json` for this chapter: `status: "ready"`, fill in `subsection_count`, `card_count`, `lab_type`, and `subsections` (each `{id, title}`), set `last_modified` to the current ISO 8601 timestamp.
+11. Update `manifest.json` for this chapter: `status: "ready"`, fill in `subsection_count`, `card_count` (0 if user declined Anki), `lab_type`, and `subsections` (each `{id, title}`), set `last_modified` to the current ISO 8601 timestamp.
 12. Re-render the roadmap `index.html` from the manifest so the chapter shows as ready.
 13. Tell the user the chapter is done and which is next, e.g.:
 
@@ -167,7 +207,9 @@ The `scripts/generate_anki.py` script takes a JSON list of cards (each `{text, e
 | `templates/chapter.html` | Chapter notes page template (real content) |
 | `templates/lab.ipynb` | Jupyter notebook lab template |
 | `templates/lab-guide.md` | Markdown lab guide template (non-Python labs) |
-| `scripts/generate_anki.py` | genanki wrapper for cloze decks |
+| `scripts/generate_anki.py` | genanki wrapper for cloze decks (only used if the user opts in) |
+| `scripts/render_lab.py` | Renders `lab-guide.md` to a styled `lab.html` matching the course theme |
+| `scripts/render_code_index.py` | Renders `code-examples/index.html` listing every script with the course theme |
 | `references/paraphrasing-rules.md` | Detailed paraphrasing guidance with worked example |
 | `references/lab-decisions.md` | Lab type decision rules per content type |
 | `references/anki-card-rules.md` | What to clozify, formatting, volume guidance |
@@ -196,8 +238,10 @@ Before declaring a chapter done, verify:
 - [ ] Chapter `index.html` written and renders without errors
 - [ ] All subsections have quizzes (3-5 questions each)
 - [ ] Code examples extracted to `code-examples/` and linked from notes
+- [ ] `code-examples/index.html` rendered by `render_code_index.py` (if the chapter has code)
 - [ ] Lab file produced (or chapter explicitly marked as conceptual-only)
-- [ ] Anki `.apkg` file generated, 15-30 valid cloze cards
+- [ ] For markdown labs: `lab.html` rendered by `render_lab.py` alongside the `.md` source
+- [ ] User was asked about Anki; deck generated only if they opted in (15-30 valid cloze cards)
 - [ ] `manifest.json` updated (`status: "ready"`, counts, `last_modified`)
 - [ ] Roadmap `index.html` re-rendered
 - [ ] No em dashes, no emojis (unless source-driven), British English throughout
