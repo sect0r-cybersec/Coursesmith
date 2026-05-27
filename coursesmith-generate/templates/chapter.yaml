@@ -1,0 +1,126 @@
+# Chapter source schema for render_chapter.py
+#
+# Write this file as `chapter.yaml` inside the chapter directory, then run:
+#   python scripts/render_chapter.py \
+#     --source   chapters/NN-slug/chapter.yaml \
+#     --manifest manifest.json \
+#     --output   chapters/NN-slug/index.html
+#
+# This replaces hand-written chapter HTML — the renderer handles sidebar
+# (from manifest), Prism JS includes (auto-detected from used languages),
+# resource cards (auto-detected from files on disk), prev/next nav, and the
+# quiz markup. The model only writes content.
+
+# Lead paragraph(s) above the resource cards. Markdown. Use shortcodes.
+intro: |
+  One-paragraph framing of the chapter. What's the topic, why does it matter
+  for the reader (pentester / security practitioner / defender), what will
+  they be able to do by the end. No "this chapter will…" narration — teach
+  the subject directly.
+
+subsections:
+  - id: short-kebab-case-id      # used as the anchor (#id)
+    title: Section title shown in the heading and sidebar
+    body: |
+      Markdown body. Paragraphs, lists, fenced code blocks, pipe tables, the
+      lot. Shortcodes below.
+
+      ## Subheading
+
+      Inline code with backticks: `ls -la`, `${VAR}`, `chmod u+x`.
+
+      A fenced code block (Prism picks up the language tag):
+
+      ```bash
+      $ echo "hello"
+      hello
+      ```
+
+      A pipe table:
+
+      | Operator | Description |
+      |----------|-------------|
+      | `>`      | Redirects stdout to a file (overwrites) |
+      | `>>`     | Appends to a file |
+
+      ### Shortcodes
+
+      Inline-in-paragraph:
+      - References CVE !cve CVE-2024-1234 right here in the sentence.
+      - Maps to ATT&CK technique !mitre T1059.001 the same way.
+
+      Line-level (each on its own line, surrounded by blank lines):
+
+      !codefile examples/hello.sh
+
+      !figure images/handshake.png "Three-way TCP handshake"
+
+      Block fences:
+
+      :::note
+      A plain informational callout. Markdown inside is rendered.
+      :::
+
+      :::note warning
+      **Don't run this on a target you don't own.** This is destructive.
+      :::
+
+      :::note tip
+      You can also pipe the output through `jq` for nicer formatting.
+      :::
+
+      :::note danger
+      This will wipe the target's disk. Read it twice before running.
+      :::
+
+      :::terminal
+      $ nmap -sV -p- 10.10.10.5
+      Starting Nmap 7.94 ( https://nmap.org )
+      PORT   STATE SERVICE VERSION
+      22/tcp open  ssh     OpenSSH 8.9p1
+      :::
+
+      :::terminal powershell
+      PS C:\> Get-LocalUser | Where-Object Enabled
+      Name          Enabled  Description
+      Administrator True     Built-in account
+      :::
+
+      :::terminal python
+      >>> import struct
+      >>> struct.pack("<I", 0xdeadbeef)
+      b'\xef\xbe\xad\xde'
+      :::
+
+    quiz:
+      # Multiple-choice question. `correct` is 1-indexed (or letter "a"/"b"/…)
+      - mcq: Which file descriptor number is standard error?
+        options:
+          - "0"
+          - "1"
+          - "2"
+          - "3"
+        correct: 3
+        explain: 0 is stdin, 1 is stdout, 2 is stderr.
+
+      # Short-answer question. No grading; user reveals the model answer.
+      - short: Why is redirecting stderr to /dev/null risky during development?
+        answer: |
+          /dev/null discards everything. If a command emits errors that would
+          have helped diagnose the problem, you'll never see them. Redirect to
+          a logfile instead.
+
+  - id: another-section
+    title: Another section
+    body: |
+      Subsections can be as short or long as the source material warrants.
+      3-7 subsections per chapter is a reasonable target.
+    quiz:
+      - mcq: What does `chmod u+x file.sh` do?
+        options:
+          - Makes the file readable by all users
+          - Sets the executable bit for the file's owner
+          - Removes the executable bit
+          - Marks the file as a script
+        correct: b
+        explain: The `u+x` permission spec grants execute to the owning user only.
