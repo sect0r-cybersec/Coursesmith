@@ -40,21 +40,45 @@ These are non-negotiable for every chunk of generated content:
 
 Read only what this chapter needs. Never load the whole book.
 
-For PDFs, extract the chapter's pages using its stored range:
+### Primary path — pre-converted markdown (no JVM, fast)
 
+Check `source_md` in the manifest. If set and the file exists, slice the chapter's text by page-number markers embedded at init time:
+
+```python
+import re
+
+with open(source_md, encoding="utf-8") as f:
+    content = f.read()
+
+# Markers: <!-- Page N --> appear between pages (page 1 has no leading marker).
+# Split on all markers, collect pages in [page_start, page_end].
+parts = re.split(r'<!-- Page (\d+) -->', content)
+# parts[0]=page 1 text, parts[1]="2", parts[2]=page 2 text, ...
+pages = {1: parts[0]}
+for i in range(1, len(parts), 2):
+    pages[int(parts[i])] = parts[i + 1] if i + 1 < len(parts) else ""
+
+chapter_text = "".join(pages.get(n, "") for n in range(page_start, page_end + 1))
+```
+
+Use `chapter_text` as the source for subsection identification and paraphrasing.
+
+### Fallback path — extract from PDF directly
+
+Use when `source_md` is null, the file is missing, or the source is `.docx`/`.epub`.
+
+**PDF:**
 ```bash
 pdftotext -f {page_start} -l {page_end} "{source_pdf}" -
 ```
+Add `-layout` for code- or figure-heavy chapters. If `pdftotext` is missing, install poppler-utils or fall back to `pypdf`/`pdfplumber`.
 
-For code- or figure-heavy chapters where layout matters, add `-layout` to preserve columns and indentation. For embedded images the user needs:
-
+**Images** (when the user needs figures):
 ```bash
 pdfimages -f {page_start} -l {page_end} -png "{source_pdf}" {output_dir}/chapters/NN-slug/images/img
 ```
 
-For `.docx` / `.epub` sources (manifest shows `page_start: 0`), split by chapter heading and read just that chapter's range.
-
-If `pdftotext` is missing, install poppler-utils, or fall back to `pypdf` / `pdfplumber`.
+**`.docx` / `.epub`** (manifest shows `page_start: 0`): split by chapter heading and read just that chapter's range.
 
 ## Per-chapter flow (next-chapter and named-chapter modes)
 

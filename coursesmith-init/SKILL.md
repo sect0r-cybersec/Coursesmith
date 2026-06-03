@@ -53,7 +53,45 @@ Show the proposed list with chapter numbers, titles, and PDF page ranges. Ask:
 
 Wait for confirmation. Adjust the list per the user's reply.
 
-### 5. Write the scaffold
+### 5. Convert the PDF to markdown (PDF sources only)
+
+Before writing the scaffold, convert the entire PDF to a single markdown file with embedded page-number markers. This happens once so `coursesmith-generate` can slice chapters from it directly without re-spawning a JVM each session.
+
+First ensure the output directory exists, then convert:
+
+```python
+import opendataloader_pdf, subprocess, os
+
+try:
+    os.makedirs("{output_dir}", exist_ok=True)
+    opendataloader_pdf.convert(
+        input_path=["{source_pdf}"],
+        output_dir="{output_dir}",
+        format="markdown",
+        markdown_page_separator="\n\n<!-- Page %page-number% -->\n\n",
+        image_output="off",
+        quiet=True,
+    )
+    # Library writes {pdf_stem}.md — rename to source.md for consistency
+    pdf_stem = os.path.splitext(os.path.basename("{source_pdf}"))[0]
+    os.rename(
+        os.path.join("{output_dir}", pdf_stem + ".md"),
+        os.path.join("{output_dir}", "source.md"),
+    )
+    source_md = os.path.join("{output_dir}", "source.md")
+except (FileNotFoundError, subprocess.CalledProcessError, ImportError) as e:
+    source_md = None
+```
+
+**If conversion fails**, tell the user and continue — init is not blocked:
+
+> Could not convert PDF to markdown (`{error}`). Chapter generation will fall back to `pdftotext`/`pypdf` per chapter. To enable one-time conversion, install Java 11+ from https://adoptium.net.
+
+Set `source_md: null` in the manifest. `coursesmith-generate` handles the fallback automatically.
+
+**Skip this step entirely** for `.docx` and `.epub` sources — set `source_md: null`.
+
+### 6. Write the scaffold
 
 Create the folder structure and files in this order:
 
@@ -61,16 +99,16 @@ Create the folder structure and files in this order:
 2. Copy `templates/styles.css` to `{output_dir}/assets/styles.css`
 3. Copy `templates/script.js` to `{output_dir}/assets/script.js`
 4. For each chapter, create `{output_dir}/chapters/NN-{chapter-slug}/` and write a `index.html` based on `templates/chapter-placeholder.html` with the chapter's metadata substituted.
-5. Write `{output_dir}/manifest.json` from `templates/manifest.json`. All chapters get `status: "pending"`, `page_start` and `page_end` set, `subsection_count: 0`, `card_count: 0`, `lab_type: null`, `subsections: []`. Record `source_pdf` and `output_dir` as absolute paths. Set `generated_at` and `last_modified` to the current ISO 8601 timestamp.
+5. Write `{output_dir}/manifest.json` from `templates/manifest.json`. All chapters get `status: "pending"`, `page_start` and `page_end` set, `subsection_count: 0`, `card_count: 0`, `lab_type: null`, `subsections: []`. Record `source_pdf`, `output_dir`, and `source_md` as absolute paths (`source_md` is null if conversion failed or source is not a PDF). Set `generated_at` and `last_modified` to the current ISO 8601 timestamp.
 6. Write `{output_dir}/index.html` from `templates/roadmap.html`. Render a roadmap card for every chapter (all "pending" at this point), linking to its placeholder page.
 
 For `.docx` / `.epub` sources, set `page_start` and `page_end` to `0` in the manifest and note the source format in the `_format` field; `coursesmith-generate` will split by chapter heading instead of page range.
 
-### 6. Tell the user the folder is ready
+### 7. Tell the user the folder is ready
 
 > Folder set up at `{output_dir}/`. Open `index.html` in a browser to see the roadmap. Generating chapter 1 now.
 
-### 7. Hand off to coursesmith-generate
+### 8. Hand off to coursesmith-generate
 
 Invoke `coursesmith-generate` immediately after step 6, no confirmation prompt — the handoff is part of the contract. **Exception:** if the user's original prompt said "setup only", "scaffold only", or "don't do chapter 1 yet", stop instead and tell them: "Scaffold ready. Say 'do chapter 1' whenever you want to start." A neutral prompt ("build a course from this PDF") is not an opt-out.
 
