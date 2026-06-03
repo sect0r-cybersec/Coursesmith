@@ -60,9 +60,48 @@ Before writing the scaffold, convert the entire PDF to a single markdown file wi
 First ensure the output directory exists, then convert:
 
 ```python
-import opendataloader_pdf, subprocess, os
+import subprocess, os, glob as _glob
+
+# Ensure Java 11+ is on PATH — systems often have a Java 8 stub that shadows newer installs.
+def _find_java_home():
+    # Honour an already-correct JAVA_HOME
+    jh = os.environ.get("JAVA_HOME", "")
+    if jh:
+        try:
+            out = subprocess.check_output(
+                [os.path.join(jh, "bin", "java"), "-version"],
+                stderr=subprocess.STDOUT, text=True)
+            major = out.split('"')[1].split(".")
+            ver = int(major[1]) if major[0] == "1" else int(major[0])
+            if ver >= 11:
+                return jh
+        except Exception:
+            pass
+    # Search common install locations (newest version sorts last with reverse=True)
+    patterns = [
+        r"C:\Program Files\Eclipse Adoptium\jdk-*",
+        r"C:\Program Files\Microsoft\jdk-*",
+        r"C:\Program Files\Java\jdk-*",
+        r"C:\Program Files\BellSoft\LibericaJDK-*",
+        "/usr/lib/jvm/temurin-*",
+        "/usr/lib/jvm/java-*-openjdk*",
+    ]
+    candidates = []
+    for p in patterns:
+        candidates.extend(_glob.glob(p))
+    for c in sorted(candidates, reverse=True):
+        java_bin = os.path.join(c, "bin", "java") + (".exe" if os.name == "nt" else "")
+        if os.path.exists(java_bin):
+            return c
+    return None
+
+_jh = _find_java_home()
+if _jh:
+    os.environ["JAVA_HOME"] = _jh
+    os.environ["PATH"] = os.path.join(_jh, "bin") + os.pathsep + os.environ["PATH"]
 
 try:
+    import opendataloader_pdf
     os.makedirs("{output_dir}", exist_ok=True)
     opendataloader_pdf.convert(
         input_path=["{source_pdf}"],
