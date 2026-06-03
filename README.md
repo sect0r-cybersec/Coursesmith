@@ -54,6 +54,7 @@ Install the skills via the Claude Code skill installer, then in any Claude Code 
 ## Requirements
 
 - Claude Code with skill support
-- Python 3.9+ (scripts auto-install their own dependencies)
-- `pdftotext` / `pdfimages` (poppler-utils)
+- Python 3.10+ (scripts auto-install their own dependencies)
+- **Java 11+** — required by `opendataloader-pdf` for the one-time PDF→markdown conversion at init. Without it, chapter generation falls back to `pdftotext`/`pypdf` (functional but slower and lower-quality). Install [Eclipse Temurin 21 LTS](https://adoptium.net) if missing. Java is only needed during `coursesmith-init`; subsequent sessions read the saved `source.md` and do not require it.
+- `pdftotext` / `pdfimages` (poppler-utils) — used as fallback when Java is unavailable, and for image extraction regardless
 - Chromium (auto-installed by Playwright on first cert render)
