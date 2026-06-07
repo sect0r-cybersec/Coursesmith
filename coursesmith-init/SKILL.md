@@ -41,17 +41,40 @@ pdftotext -f 1 -l 25 "{source_pdf}" -
 
 Adjust the page range if the ToC is further into the front matter. For docx use `pandoc -t plain` or read the file directly and split on chapter headings. For epub, unzip and read the `nav.xhtml` / `toc.ncx`.
 
-From the ToC, derive each chapter's **1-based PDF page range**. PDF page numbers often differ from printed page numbers because of front matter. Spot-check by opening one chapter's first PDF page and confirming the title matches; if not, derive an offset (printed page X is PDF page X + offset) and apply it across the board.
+From the ToC, derive each chapter's **1-based PDF page range**. PDF page numbers often differ from printed page numbers because of front matter.
+
+**Strip front matter.** Drop non-chapter entries that aren't study material: preface, foreword, introduction-to-the-book, acknowledgments, about-the-author, dedication, copyright. *Keep* numbered chapters and appendices (appendices are usually worth studying). When in doubt about a borderline entry, keep it — it's cheap to drop later and the list is printed for the user to see.
 
 If `pdftotext` is missing, install poppler-utils (`apt install poppler-utils`, `brew install poppler`). Acceptable substitutes: `pypdf`, `pdfplumber`. Use whatever is available.
 
-### 4. Confirm the chapter list with the user
+### 4. Verify the page offset (the real correctness guard)
 
-Show the proposed list with chapter numbers, titles, and PDF page ranges. Ask:
+The page offset is the dangerous part of init: a wrong offset silently poisons `page_start`/`page_end` for **every** chapter in the manifest, and `coursesmith-generate` reads those ranges for the whole book afterwards. A wrong chapter *title* only affects a cheap-to-redo folder name; a wrong *offset* corrupts every future chapter. So the guard goes here, on the offset — not on a human eyeballing the title list.
 
-> Does this look right? Any chapters to merge, split, or skip before I build the scaffold?
+Run an **automated spot-check** (PDF sources only):
 
-Wait for confirmation. Adjust the list per the user's reply.
+1. Open the first PDF page of **chapter 1** (`pdftotext -f {ch1_start} -l {ch1_start} "{source_pdf}" -`) and confirm the chapter title appears near the top.
+2. Open the first PDF page of the **last chapter** and confirm the same. (Checking both ends catches offset drift that a single check would miss.)
+
+If either title matches its page → the offset is good. **Print the final chapter list to chat** (numbers, titles, PDF page ranges) so the user can see what was derived, then proceed automatically to step 5 — no pause, no "does this look right?".
+
+If a title doesn't match → derive the offset (printed page X is PDF page X + offset), apply it across the board, and re-run the spot-check. If it then matches, proceed automatically.
+
+**Pause only if the spot-check still can't be confirmed after deriving an offset** — this is the one case worth a human. Show the proposed list (numbers, titles, PDF page ranges) and the mismatch, and ask:
+
+> I couldn't confirm the PDF page offset automatically — chapter {N}'s title didn't appear on its expected page. Here's the list I derived: {list}. Does this look right, or what's the correct offset?
+
+Adjust per the reply.
+
+For `.docx`/`.epub` there are no PDF page numbers to verify — skip the spot-check and proceed.
+
+#### The `--step` flag
+
+If the user's prompt includes `--step` (or asks to "review the chapters", "let me check the list first", etc.), **always** print the full list and pause for confirmation before building the scaffold, regardless of whether the spot-check passed:
+
+> Here's the chapter list with PDF page ranges: {list}. Any chapters to merge, split, or skip before I build the scaffold?
+
+Wait for confirmation and adjust per the reply. Without `--step`, the default is autonomous: print the list for transparency, but only pause if the spot-check failed (above).
 
 ### 5. Convert the PDF to markdown (PDF sources only)
 
@@ -170,5 +193,5 @@ The skill assumes the user's filesystem persists between sessions. On claude.ai 
 ## What this skill never does
 
 - Generate chapter content (paraphrasing, quizzes, code, Anki) - that lives in `coursesmith-generate`.
-- Read the body of the book - init only reads the ToC pages.
+- Read the body of the book for content - init reads the ToC pages plus the first page of the first and last chapters to verify the page offset (step 4). It never reads chapters in full or extracts content; that lives in `coursesmith-generate`.
 - Overwrite an existing study-guide folder. If `{output_dir}/manifest.json` already exists, stop and tell the user: "A study guide already exists at `{output_dir}`. Use coursesmith-generate to add the next chapter or refine an existing one."
