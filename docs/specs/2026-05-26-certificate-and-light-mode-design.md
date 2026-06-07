@@ -1,7 +1,7 @@
 # Certificate skill + course light mode — design
 
 **Date:** 2026-05-26
-**Author:** harrison.2004@outlook.com (with Claude brainstorming)
+**Author:** Coursesmith maintainer (with Claude brainstorming)
 **Status:** Locked, ready for implementation
 
 ## Understanding summary
@@ -97,7 +97,7 @@ coursesmith-certificate/
 ```bash
 python {certificate-skill-dir}/scripts/render_certificate.py \
   --manifest {output_dir}/manifest.json \
-  --name "Harrison Smith" \
+  --name "Jane Doe" \
   [--accent "#ff4136"] \
   [--date "26 May 2026"]
 ```
@@ -123,7 +123,7 @@ python {certificate-skill-dir}/scripts/render_certificate.py \
 ```json
 {
   "certificate": {
-    "name": "Harrison Smith",
+    "name": "Jane Doe",
     "id": "CSM-A7F2-2026",
     "accent": "#f5c842",
     "accent_source": "cover",

@@ -3,7 +3,7 @@
 Usage:
     python render_certificate.py \\
         --manifest path/to/manifest.json \\
-        --name "Harrison Smith" \\
+        --name "Jane Doe" \\
         [--theme dark|light] \\
         [--accent "#ff4136"] \\
         [--date "26 May 2026"]

@@ -12,9 +12,9 @@
   },
 
   "_paths_comment": "Recorded at init so later sessions know where the source PDF and the output folder live. Both are absolute paths on the user's machine. source_pdf is read on demand for page-range extraction; output_dir is where the study guide is written. source_md is the full-book markdown produced by opendataloader-pdf at init time (null if Java was unavailable or source is not a PDF).",
-  "source_pdf": "/Users/sam/books/book-title.pdf",
-  "output_dir": "/Users/sam/books/study-guide-book-title-3rd-ed",
-  "source_md": "/Users/sam/books/study-guide-book-title-3rd-ed/source.md",
+  "source_pdf": "/Users/you/books/book-title.pdf",
+  "output_dir": "/Users/you/books/study-guide-book-title-3rd-ed",
+  "source_md": "/Users/you/books/study-guide-book-title-3rd-ed/source.md",
 
   "generated_at_comment": "ISO 8601 timestamp when the manifest was first created",
   "generated_at": "2026-05-07T00:00:00Z",
