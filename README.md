@@ -1,19 +1,34 @@
+<div align="center">
+
+![Language](https://img.shields.io/github/languages/top/sect0r-cybersec/Coursesmith)
+![Last commit](https://img.shields.io/github/last-commit/sect0r-cybersec/Coursesmith)
+
 # Coursesmith
 
-Claude Code skills that turn a non-fiction book (PDF, DOCX, or EPUB) into a self-contained, browser-openable interactive study guide — with paraphrased notes, embedded quizzes, hands-on labs, optional Anki decks, and a generated certificate of completion. The output looks and behaves like a TryHackMe / HTB-Academy course and runs entirely from static files on your disk; no server, no build step, no account.
+**Turn a technical book into an interactive, TryHackMe-style study guide, from inside Claude Code.**
+
+</div>
+
+Coursesmith is a set of three [Claude Code](https://claude.com/claude-code) skills that turn a non-fiction book (PDF, DOCX, or EPUB) into a self-contained, browser-openable study guide: paraphrased notes, embedded quizzes, hands-on labs, optional Anki decks, and a generated certificate of completion. The output runs entirely from static files on disk, with no server, no build step, and no account.
 
 It is built for **IT and cyber-security books** across the whole genre (Linux/shell, Windows/PowerShell/AD, Python offensive tooling, web security, exploit dev, cloud/DevSecOps, forensics, threat modelling), but works for any technical non-fiction.
 
+<p align="center">
+  <img src="docs/assets/coursesmith-mockup.png" alt="A Coursesmith study guide roadmap, showing chapter cards with completed, in-progress and pending status, a progress bar, and lab badges" width="800">
+</p>
+
+<p align="center"><em>A generated study guide roadmap, built from Coursesmith's real templates and styling.</em></p>
+
 ## Key Features
 
-- **Whole-book pipeline** — point it at a PDF and get a clickable roadmap, per-chapter pages, and a completion certificate.
-- **Faithful paraphrasing** — prose is condensed to 40–60% of the source; code, commands, paths, CVEs, and version numbers are preserved verbatim. No fabrication.
-- **Interactive chapters** — multiple-choice and code-completion quizzes, progress ticks, and quiz state saved in your browser's `localStorage`.
-- **Hands-on labs** — Jupyter notebooks for Python chapters, styled markdown lab guides for shell/Docker/CTF chapters, auto-selected per chapter.
-- **Optional Anki** — opt-in 15–30 card cloze decks (`.apkg`) per chapter.
-- **Generated certificate** — neon accent colour auto-derived from the book cover, author scraped from PDF metadata, rendered to PNG via headless Chromium. Dark and light themes.
-- **Token-efficient rendering** — the model authors compact YAML/markdown; Python renderers expand it into themed HTML, saving roughly 70% of the tokens hand-written HTML would cost.
-- **Resumable** — every chapter is written to disk before the next begins. Interrupt a long run and pick up later with "next chapter".
+- **Whole-book pipeline**: point it at a PDF and get a clickable roadmap, per-chapter pages, and a completion certificate.
+- **Faithful paraphrasing**: prose is condensed to 40 to 60% of the source; code, commands, paths, CVEs, and version numbers are preserved verbatim. No fabrication.
+- **Interactive chapters**: multiple-choice and code-completion quizzes, progress ticks, and quiz state saved in your browser's `localStorage`.
+- **Hands-on labs**: Jupyter notebooks for Python chapters, styled markdown lab guides for shell/Docker/CTF chapters, auto-selected per chapter.
+- **Optional Anki**: opt-in 15 to 30 card cloze decks (`.apkg`) per chapter.
+- **Generated certificate**: neon accent colour auto-derived from the book cover, author scraped from PDF metadata, rendered to PNG via headless Chromium. Dark and light themes.
+- **Token-efficient rendering**: the model authors compact YAML/markdown; Python renderers expand it into themed HTML, saving roughly 70% of the tokens hand-written HTML would cost.
+- **Resumable**: every chapter is written to disk before the next begins. Interrupt a long run and pick up later with "next chapter".
 
 ---
 
@@ -40,15 +55,15 @@ It is built for **IT and cyber-security books** across the whole genre (Linux/sh
 - [Troubleshooting](#troubleshooting)
 - [Design Docs](#design-docs)
 - [Contributing](#contributing)
-- [License](#license)
+- [Licence](#licence)
 
 ---
 
 ## What this is (and isn't)
 
-Coursesmith is **not an application you run** — it is a set of three [Claude Code](https://claude.com/claude-code) *skills*. A skill is a folder containing a `SKILL.md` instruction file plus bundled templates and Python scripts. You install the folders where Claude Code can find them, then drive the workflow with slash commands in a Claude Code session. Claude reads the book, authors the content, and runs the bundled renderers; the renderers produce the static study-guide site.
+Coursesmith is **not an application you run**: it is a set of three Claude Code skills. A skill is a folder containing a `SKILL.md` instruction file plus bundled templates and Python scripts. You install the folders where Claude Code can find them, then drive the workflow with slash commands in a Claude Code session. Claude reads the book, authors the content, and runs the bundled renderers; the renderers produce the static study-guide site.
 
-The **study guide it produces** is a plain folder of HTML/CSS/JS. Open `index.html` in any browser — no web server, database, or deployment required.
+The **study guide it produces** is a plain folder of HTML/CSS/JS. Open `index.html` in any browser: no web server, database, or deployment required.
 
 > **Copyright note.** Output is paraphrased educational notes for your own personal study, not redistribution. Coursesmith never reproduces long verbatim passages from the source. Don't republish generated guides for copyrighted books.
 
@@ -56,26 +71,26 @@ The **study guide it produces** is a plain folder of HTML/CSS/JS. Open `index.ht
 
 ## The three skills
 
-### `coursesmith-init` — one-time setup per book
+### `coursesmith-init`: one-time setup per book
 
 Reads the source file, extracts the table of contents, strips front matter (preface, foreword, acknowledgments), and derives each chapter's page range. It verifies the PDF page offset automatically by checking the first and last chapters' opening pages against their titles, then scaffolds the course folder: roadmap `index.html`, `manifest.json`, shared `assets/`, and a clickable placeholder page for every chapter. For PDFs it also does a one-time full-book conversion to markdown (`source.md`) so later sessions never re-spawn a JVM. Hands off to `coursesmith-generate` for chapter 1 automatically.
 
-- **Default flow is autonomous** — it prints the derived chapter list for transparency and proceeds without a confirmation prompt.
+- **Default flow is autonomous**: it prints the derived chapter list for transparency and proceeds without a confirmation prompt.
 - **`--step`** forces an interactive confirm/edit of the chapter list before scaffolding.
-- It pauses on its own only when the page offset can't be verified — the one case a human genuinely needs to weigh in.
+- It pauses on its own only when the page offset can't be verified, the one case a human genuinely needs to weigh in.
 - It refuses to overwrite an existing study-guide folder.
 
 Run this **once per book**.
 
-### `coursesmith-generate` — the repeat action
+### `coursesmith-generate`: the repeat action
 
 Generates (or refines) chapter content inside a folder that `init` already scaffolded. Per chapter it produces:
 
-- Paraphrased study notes (40–60% of source length), authored as `chapter.yaml`.
-- 3–5 question quizzes per subsection (multiple-choice and short-answer), embedded in the page.
+- Paraphrased study notes (40 to 60% of source length), authored as `chapter.yaml`.
+- 3 to 5 question quizzes per subsection (multiple-choice and short-answer), embedded in the page.
 - Extracted code examples as standalone files, referenced (never pasted) from the notes.
-- A hands-on lab — Jupyter notebook, styled markdown guide, or none for purely conceptual chapters.
-- An **optional** 15–30 card Anki cloze deck (you're asked per chapter; default is no).
+- A hands-on lab: Jupyter notebook, styled markdown guide, or none for purely conceptual chapters.
+- An **optional** 15 to 30 card Anki cloze deck (you're asked per chapter; default is no).
 
 **Modes:**
 
@@ -88,9 +103,9 @@ Generates (or refines) chapter content inside a folder that `init` already scaff
 
 Requires a folder already set up by `coursesmith-init`. If no `manifest.json` is found, it stops and tells you to run init first.
 
-### `coursesmith-cert` — certificate of completion
+### `coursesmith-cert`: certificate of completion
 
-Run once every chapter is `status: "ready"`. Refuses (and lists offenders) if any chapter is still pending. Prompts for the recipient name and theme (dark/light), auto-derives a neon accent from the book cover (OKLCH), scrapes the author from PDF metadata or the title page, renders the bundled HTML template through headless Chromium at 1200×800, writes `certificate.png` into the folder, and re-renders the roadmap to pin a link to it. Cert IDs are deterministic (`CSM-{hash}-{year}`).
+Run once every chapter is `status: "ready"`. Refuses (and lists offenders) if any chapter is still pending. Prompts for the recipient name and theme (dark/light), auto-derives a neon accent from the book cover (OKLCH), scrapes the author from PDF metadata or the title page, renders the bundled HTML template through headless Chromium at 1200x800, writes `certificate.png` into the folder, and re-renders the roadmap to pin a link to it. Cert IDs are deterministic (`CSM-{hash}-{year}`).
 
 ---
 
@@ -100,7 +115,7 @@ Run once every chapter is `status: "ready"`. Refuses (and lists offenders) if an
 |---|---|---|
 | **Claude Code** with skill support | Everything | The skills run inside a Claude Code session. |
 | **Python 3.10+** | All renderers and scripts | Scripts auto-install their own Python dependencies (`pyyaml`, `markdown`, `genanki`, `playwright`, `Pillow`, `pypdf`, `opendataloader-pdf`) on first use. |
-| **Java 11+** | One-time PDF→markdown conversion at init (`opendataloader-pdf`) | Only needed during `coursesmith-init`. Without it, generation falls back to `pdftotext`/`pypdf` (functional, slower, lower quality). Install [Eclipse Temurin 21 LTS](https://adoptium.net). |
+| **Java 11+** | One-time PDF-to-markdown conversion at init (`opendataloader-pdf`) | Only needed during `coursesmith-init`. Without it, generation falls back to `pdftotext`/`pypdf` (functional, slower, lower quality). Install [Eclipse Temurin 21 LTS](https://adoptium.net). |
 | **poppler-utils** (`pdftotext`, `pdfimages`, `pdfinfo`) | PDF text/image extraction and the Java-less fallback | `apt install poppler-utils` / `brew install poppler`. |
 | **Chromium** | Certificate rendering | Auto-installed by Playwright on first cert render. If offline, run `python -m playwright install chromium`. |
 
@@ -112,11 +127,11 @@ Run once every chapter is `status: "ready"`. Refuses (and lists offenders) if an
 
 Coursesmith is a set of three skill folders: `coursesmith-init/`, `coursesmith-generate/`, and `coursesmith-cert/`.
 
-### Option A — Claude Code skill installer (recommended)
+### Option A: Claude Code skill installer (recommended)
 
 If you use a skill installer/marketplace, point it at this repository and install the three `coursesmith-*` skills.
 
-### Option B — manual
+### Option B: manual
 
 Copy the three skill folders into your Claude Code skills directory:
 
@@ -184,7 +199,7 @@ Open `index.html` in the study-guide folder to see the roadmap. Click any chapte
 /coursesmith-init path/to/book.pdf
 ```
 
-Natural-language invocations work too: *"turn this book into a study guide"*, *"start a course from this PDF"*, *"make me a TryHackMe-style course from book.pdf"*.
+Natural-language invocations work too: "turn this book into a study guide", "start a course from this PDF", "make me a TryHackMe-style course from book.pdf".
 
 - **Scaffold only** (no chapter 1): add "setup only" / "scaffold only" / "don't do chapter 1 yet".
 - **Review the chapter list first**: pass `--step` or say "let me check the chapters first".
@@ -218,7 +233,7 @@ Refine mode regenerates only the component you mention and leaves the rest untou
 /coursesmith-cert regenerate with a different name
 ```
 
-Optional cert tweaks: a specific accent hex (`--accent "#ff4136"`) or a custom completion date — just ask in natural language.
+Optional cert tweaks: a specific accent hex (`--accent "#ff4136"`) or a custom completion date, just ask in natural language.
 
 ---
 
@@ -249,7 +264,7 @@ study-guide-{book-slug}/
 └── certificate.png                # Generated by coursesmith-cert after all chapters complete
 ```
 
-A chapter has `lab.ipynb` **or** `lab-guide.md` **or** neither — never both. The study guide is fully static: open `index.html` directly from the filesystem.
+A chapter has `lab.ipynb` **or** `lab-guide.md` **or** neither, never both. The study guide is fully static: open `index.html` directly from the filesystem.
 
 ---
 
@@ -283,13 +298,13 @@ State lives in two places: `manifest.json` (the source of truth for chapter stat
 The model never loads the whole book into context. It reads only the pages a chapter needs:
 
 1. **Primary path (fast, no JVM):** if `manifest.source_md` is set, slice the chapter's text from `source.md` using the `<!-- Page N -->` markers embedded at init time.
-2. **Fallback path:** if `source_md` is null/missing or the source is DOCX/EPUB, extract on demand — `pdftotext -f {start} -l {end}` for PDFs, or split by chapter heading for DOCX/EPUB.
+2. **Fallback path:** if `source_md` is null/missing or the source is DOCX/EPUB, extract on demand, using `pdftotext -f {start} -l {end}` for PDFs, or splitting by chapter heading for DOCX/EPUB.
 
 Figures are pulled with `pdfimages` only when a chapter needs them.
 
 ### The render pipeline
 
-The model authors compact source files; **Python renderers** turn them into themed HTML. This is the core token-saving design — the model writes YAML and markdown, never hand-written HTML.
+The model authors compact source files; **Python renderers** turn them into themed HTML. This is the core token-saving design: the model writes YAML and markdown, never hand-written HTML.
 
 | Author writes | Renderer | Produces |
 |---|---|---|
@@ -355,7 +370,7 @@ subsections:
   - id: short-kebab-case-id
     title: Section title
     body: |
-      Markdown body — paragraphs, lists, fenced code blocks, pipe tables,
+      Markdown body: paragraphs, lists, fenced code blocks, pipe tables,
       and the shortcodes below.
     quiz:
       - mcq: Question text?
@@ -372,20 +387,20 @@ Inside `chapter.yaml` bodies, beyond standard CommonMark (fenced code, pipe tabl
 
 **Block-level** (own line, blank lines around):
 
-- `!codefile <relative-path>` — inlines a code file as a Prism-highlighted block with a "View full file" link. Always reference code this way; never paste code into the YAML.
-- `!figure <path> "<caption>"` — embeds an image with a caption.
+- `!codefile <relative-path>`: inlines a code file as a Prism-highlighted block with a "View full file" link. Always reference code this way; never paste code into the YAML.
+- `!figure <path> "<caption>"`: embeds an image with a caption.
 
 **Block fences** (paired `:::`):
 
-- `:::note` … `:::` — informational callout. `:::note warning|tip|danger` for yellow/green/red variants.
-- `:::terminal [shell]` … `:::` — styled terminal session. Optional `bash` (default), `powershell`, `batch`, `python`, `sql`, etc.
+- `:::note` … `:::`: informational callout. `:::note warning|tip|danger` for yellow/green/red variants.
+- `:::terminal [shell]` … `:::`: styled terminal session. Optional `bash` (default), `powershell`, `batch`, `python`, `sql`, etc.
 
 **Inline:**
 
-- `!cve CVE-2024-1234` — links to the NVD page for that CVE.
-- `!mitre T1059.001` — links to the MITRE ATT&CK technique (supports parent and sub-techniques).
+- `!cve CVE-2024-1234`: links to the NVD page for that CVE.
+- `!mitre T1059.001`: links to the MITRE ATT&CK technique (supports parent and sub-techniques).
 
-Code examples are preserved **verbatim** — the renderer never refactors or modernises the source's code, since the reader's mental model must match the book.
+Code examples are preserved **verbatim**: the renderer never refactors or modernises the source's code, since the reader's mental model must match the book.
 
 ---
 
@@ -404,7 +419,7 @@ All scripts auto-install their own Python dependencies on first run.
 | `scripts/extract_accent.py` | cert | Cover image → neon hex (OKLCH), with a light variant. |
 | `scripts/extract_author.py` | cert | PDF metadata → title-page scrape, with a blacklist. |
 
-Example — render a chapter manually (Claude does this for you):
+Example: render a chapter manually (Claude does this for you):
 
 ```bash
 python coursesmith-generate/scripts/render_chapter.py \
@@ -440,6 +455,7 @@ python coursesmith-generate/scripts/render_chapter.py \
 │   ├── scripts/                   # render_certificate.py, extract_accent.py, extract_author.py
 │   └── templates/certificate.html
 └── docs/
+    ├── assets/                    # README images (e.g. coursesmith-mockup.png)
     └── specs/                     # design documents
 ```
 
@@ -449,10 +465,10 @@ python coursesmith-generate/scripts/render_chapter.py \
 
 There is no app config file. Behaviour is controlled by:
 
-- **The slash command / natural-language prompt** — mode (next/named/refine/loop), output folder, `--step`, "setup only", cert name/theme/accent/date.
-- **`manifest.json`** — chapter status, page ranges, and metadata. Hand-editable if you need to merge/split/skip chapters or correct a page offset, though re-running the relevant skill is usually easier.
-- **`.claude/settings.json`** — pre-allowed Bash tools (the PDF utilities), so Claude doesn't prompt for permission each time.
-- **Templates** — edit `templates/styles.css` / `templates/certificate.html` to change the look; the renderers only do string substitution, so design changes live in the templates.
+- **The slash command / natural-language prompt**: mode (next/named/refine/loop), output folder, `--step`, "setup only", cert name/theme/accent/date.
+- **`manifest.json`**: chapter status, page ranges, and metadata. Hand-editable if you need to merge/split/skip chapters or correct a page offset, though re-running the relevant skill is usually easier.
+- **`.claude/settings.json`**: pre-allowed Bash tools (the PDF utilities), so Claude doesn't prompt for permission each time.
+- **Templates**: edit `templates/styles.css` / `templates/certificate.html` to change the look; the renderers only do string substitution, so design changes live in the templates.
 
 ---
 
@@ -478,9 +494,9 @@ python coursesmith-init/scripts/package_guide.py \
 
 `coursesmith-init` refuses to overwrite. Use `coursesmith-generate` to add the next chapter, or delete/rename the existing folder if you really want to start over.
 
-### PDF→markdown conversion failed at init
+### PDF-to-markdown conversion failed at init
 
-Almost always a missing or too-old Java. Install **Java 11+** ([Temurin](https://adoptium.net)) and re-run init. You can proceed without it — generation falls back to `pdftotext`/`pypdf` per chapter (slower, lower quality) and `source_md` is set to `null`.
+Almost always a missing or too-old Java. Install **Java 11+** ([Temurin](https://adoptium.net)) and re-run init. You can proceed without it: generation falls back to `pdftotext`/`pypdf` per chapter (slower, lower quality) and `source_md` is set to `null`.
 
 ### `pdftotext: command not found`
 
@@ -494,7 +510,7 @@ The PDF page offset (printed page vs PDF page) was likely mis-derived. Fix `page
 
 If a scanned PDF's text layer is garbage for a chapter, generation stops rather than producing notes from broken text. OCR the PDF first (e.g. `ocrmypdf`) and re-run init against the cleaned file.
 
-### Certificate render fails — Chromium not installed
+### Certificate render fails: Chromium not installed
 
 Playwright needs Chromium once. If the auto-install fails (offline/proxy), run:
 
@@ -506,7 +522,7 @@ then re-invoke `/coursesmith-cert`.
 
 ### Certificate accent colour looks wrong
 
-The cover-derived colour can misfire on very dark covers. Re-run the cert with an explicit accent, e.g. *"regenerate the cert with accent #ff4136"*.
+The cover-derived colour can misfire on very dark covers. Re-run the cert with an explicit accent, e.g. "regenerate the cert with accent #ff4136".
 
 ### "Some chapters are still pending" (cert)
 
@@ -522,8 +538,8 @@ Expected on long books. The loop stops cleanly with every finished chapter saved
 
 Background and decisions live in `docs/specs/`:
 
-- `docs/specs/2026-05-26-coursesmith-skill-split-design.md` — why the workflow is split into init / generate / cert.
-- `docs/specs/2026-05-26-certificate-and-light-mode-design.md` — the certificate skill and light-mode theme design.
+- `docs/specs/2026-05-26-coursesmith-skill-split-design.md`: why the workflow is split into init / generate / cert.
+- `docs/specs/2026-05-26-certificate-and-light-mode-design.md`: the certificate skill and light-mode theme design.
 
 ---
 
@@ -532,12 +548,12 @@ Background and decisions live in `docs/specs/`:
 Contributions are welcome. When editing a skill, keep these invariants intact:
 
 - **No fabrication, faithful paraphrasing.** Prose may be condensed; code, commands, paths, IDs, and version numbers stay verbatim.
-- **Authors write source, renderers write HTML.** Never hand-author chapter HTML — change `chapter.yaml` (or the templates) and re-run the renderer.
+- **Authors write source, renderers write HTML.** Never hand-author chapter HTML; change `chapter.yaml` (or the templates) and re-run the renderer.
 - **British English, no AI tells.** No em dashes, no emojis (unless the source uses them), plain technical prose.
 - Scripts should keep auto-installing their own dependencies so the skills work on a fresh machine.
 
-The reference files (`coursesmith-generate/references/*.md`) define the paraphrasing, lab-selection, and Anki rules — read them before changing generation behaviour.
+The reference files (`coursesmith-generate/references/*.md`) define the paraphrasing, lab-selection, and Anki rules, read them before changing generation behaviour.
 
-## License
+## Licence
 
-No license file is currently included in this repository. Until one is added, all rights are reserved by the authors. Generated study guides are for personal study only; do not redistribute content derived from copyrighted books.
+No licence file is currently included in this repository. Until one is added, all rights are reserved by the authors. Generated study guides are for personal study only; do not redistribute content derived from copyrighted books.
